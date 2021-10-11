@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer
 
 
 @dataclass
-class Genre(db.Model):
+class GenreModel(db.Model):
     name: str
 
     __tablename__ = 'genres'
