@@ -28,6 +28,6 @@ class AnimeModel(db.Model):
    is_movie = Column(Boolean, nullable=False)
    is_dubbed = Column(Boolean, nullable=False)
    is_completed = Column(Boolean, nullable=False)
-   created_at = Column(DateTime, nullable=False)
+   created_at = Column(DateTime(timezone=True), nullable=False)
 
    

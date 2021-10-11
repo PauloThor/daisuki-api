@@ -23,7 +23,7 @@ class UserModel(db.Model):
     username = Column(String(50), nullable=False, unique=True)
     avatar_url = Column(String(255))
     permission = Column(String(30), nullable=False)
-    created_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
     password_hash = Column(String(511), nullable=False)
   
 
