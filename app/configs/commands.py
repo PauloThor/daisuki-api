@@ -44,6 +44,14 @@ def cli_animes(app: Flask):
         session.add_all(to_insert)
         session.commit()
 
+        data_genres_animes = read_json('snippet_genres_animes.json')
+
+        to_insert = [genres_animes(**data) for data in data_genres_animes]
+    
+        session.add_all(to_insert)
+        session.commit()
+
+
     app.cli.add_command(cli)
 
 
