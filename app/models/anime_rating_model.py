@@ -14,7 +14,7 @@ class AnimeRatingModel(db.Model):
   id = Column(Integer, primary_key=True)
   rating = Column(Integer, nullable=False)
  
-  user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-  anime_id = Column(Integer, ForeignKey("animes.id"), nullable=False)
+  user_id = Column(Integer, ForeignKey('users.id'))
+  anime_id = Column(Integer, ForeignKey('animes.id'))
 
   
