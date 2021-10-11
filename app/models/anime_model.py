@@ -21,7 +21,7 @@ class AnimeModel(db.Model):
  
   
    id = Column(Integer, primary_key=True)
-   name = Column(String(255), nullable=True, unique=True)
+   name = Column(String(255), nullable=False, unique=True)
    synopsis = Column(String(1023), nullable=False)
    image_url = Column(String(255), nullable=False)
    total_episodes = Column(Integer, nullable=False)
