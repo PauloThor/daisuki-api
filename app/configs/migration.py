@@ -9,5 +9,5 @@ def init_app(app: Flask):
     from app.models.episode_model import EpisodeModel
     from app.models.user_model import UserModel
     
-    Migrate(app, app.db)
+    Migrate(app, app.db, compare_type=True)
 
