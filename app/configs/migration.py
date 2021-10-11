@@ -3,6 +3,7 @@ from flask_migrate import Migrate
 
 def init_app(app: Flask):
 
+    from app.models.genre_model import GenreModel
     from app.models.anime_model import AnimeModel
     from app.models.user_model import UserModel
     
