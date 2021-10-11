@@ -55,6 +55,23 @@ def cli_animes(app: Flask):
     app.cli.add_command(cli)
 
 
+def cli_episodes(app: Flask):
+    cli = AppGroup('cli_episodes')
+
+    @cli.command('create')
+    def cli_episodes_create():
+        session = current_app.db.session
+        data = read_json('snippet_episodes.json')
+
+        to_insert = [EpisodeModel(**episode) for episode in data]
+        
+        session.add_all(to_insert)
+        session.commit()
+
+    app.cli.add_command(cli)
+
+
 def init_app(app: Flask):
     cli_genres(app)
     cli_animes(app)
+    cli_episodes(app)
