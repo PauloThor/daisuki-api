@@ -2,7 +2,7 @@ from flask import Flask, current_app
 from flask.cli import AppGroup
 from app.models.genre_model import GenreModel
 from app.models.anime_model import AnimeModel
-from app.models.genre_anime_model import genres_animes
+from app.models.genre_anime_model import GenreAnimeModel
 from app.models.episode_model import EpisodeModel
 from json import load
 
@@ -46,7 +46,7 @@ def cli_animes(app: Flask):
 
         data_genres_animes = read_json('snippet_genres_animes.json')
 
-        to_insert = [genres_animes(**data) for data in data_genres_animes]
+        to_insert = [GenreAnimeModel(**data) for data in data_genres_animes]
     
         session.add_all(to_insert)
         session.commit()

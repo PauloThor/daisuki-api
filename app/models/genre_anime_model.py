@@ -1,8 +1,12 @@
 from app.configs.database import db
+from sqlalchemy import Column, Integer
+from sqlalchemy.sql.schema import ForeignKey
 
 
-genres_animes = db.Table('genres_animes',
-    db.Column('id', db.Integer, primary_key=True),
-    db.Column('genre_id', db.Integer, db.ForeignKey('genres.id')),
-    db.Column('anime_id', db.Integer, db.ForeignKey('animes.id'))
-)
+class GenreAnimeModel(db.Model):
+
+    __tablename__ = 'genres_animes'
+
+    id = Column(Integer, primary_key=True)
+    genre_id = Column(Integer, ForeignKey('genres.id'))
+    anime_id = Column(Integer, ForeignKey('animes.id'))
