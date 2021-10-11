@@ -1,0 +1,13 @@
+from dataclasses import dataclass
+from app.configs.database import db
+from sqlalchemy import Column, String, Integer
+
+
+@dataclass
+class Genre(db.Model):
+    name: str
+
+    __tablename__ = 'genres'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False, unique=True)
