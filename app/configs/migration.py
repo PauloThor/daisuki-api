@@ -8,6 +8,7 @@ def init_app(app: Flask):
     from app.models.genre_anime_model import genres_animes
     from app.models.episode_model import EpisodeModel
     from app.models.user_model import UserModel
+    from app.models.anime_rating_model import AnimeRatingModel
     
     Migrate(app, app.db, compare_type=True)
 

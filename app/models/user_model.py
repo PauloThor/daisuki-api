@@ -19,7 +19,7 @@ class UserModel(db.Model):
  
 
     id = Column(Integer, primary_key=True)
-    email = Column(String(255), nullable=True, unique=True)
+    email = Column(String(255), nullable=False, unique=True)
     username = Column(String(50), nullable=False, unique=True)
     avatar_url = Column(String(255))
     permission = Column(String(30), nullable=False)
