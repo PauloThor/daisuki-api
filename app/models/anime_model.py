@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
+
+from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
- 
+
 
 @dataclass
 class AnimeModel(db.Model):
@@ -30,4 +32,4 @@ class AnimeModel(db.Model):
    is_completed = Column(Boolean, nullable=False)
    created_at = Column(DateTime(timezone=True), nullable=False)
 
-   
+   genres = relationship('GenreAnimeModel')
