@@ -1,6 +1,6 @@
 from flask import Flask
 from app.configs import database, migration, env_configs, jwt, cors, commands
-from app.routes import api_daisuki
+from app.routes import api_blueprint
 
 def create_app():
 
@@ -10,7 +10,7 @@ def create_app():
     database.init_app(app)
     migration.init_app(app)
     jwt.init_app(app)
-    app.register_blueprint(api_daisuki.bp)
+    app.register_blueprint(api_blueprint.bp)
     commands.init_app(app)
 
     return app
