@@ -1,6 +1,6 @@
 from flask import Blueprint
-from . import animes_blueprint
+from . import anime_blueprint
 
 bp = Blueprint('api_bp', __name__, url_prefix='/api')
 
-bp.register_blueprint(animes_blueprint.bp)
+bp.register_blueprint(anime_blueprint.bp)
