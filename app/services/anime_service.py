@@ -16,3 +16,4 @@ def create_anime(files: ImmutableMultiDict, form: ImmutableMultiDict) -> AnimeMo
     new_anime.created_at = datetime.utcnow()
 
     return new_anime
+

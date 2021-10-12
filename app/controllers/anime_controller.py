@@ -10,12 +10,14 @@ import psycopg2
 
 
 def create():
+    form_data = request.form
     try:
-        new_anime = Animes.create_anime(request.files, request.form)
+        new_anime = Animes.create_anime(request.files, form_data)
         session = current_app.db.session
-        session.add(new_anime)
-        session.commit(new_anime)
-        
+        # session.add(new_anime)
+        # session.commit(new_anime)
+        genres = form_data['genres'].split(',')
+        print(genres)
         return jsonify(new_anime), HTTPStatus.CREATED
     except InvalidImageError as e:
         return e.message, HTTPStatus.BAD_REQUEST
