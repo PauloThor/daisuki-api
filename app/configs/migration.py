@@ -11,5 +11,6 @@ def init_app(app: Flask):
     from app.models.user_model import UserModel
     from app.models.anime_rating_model import AnimeRatingModel
     from app.models.comment_model import CommentModel
+    from app.models.watched_episode_model import WatchedEpisodeModel
     
     Migrate(app, app.db, compare_type=True)
