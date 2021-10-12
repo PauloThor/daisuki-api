@@ -13,4 +13,3 @@ bp.delete('/<int:id>')(Controller.delete)
 bp.put('/moderators')(Controller.promote)
 bp.delete('/moderators')(Controller.demote)
 bp.get('/moderators')(Controller.get_mods)
-
