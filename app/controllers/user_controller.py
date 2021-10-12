@@ -3,7 +3,7 @@ from http import HTTPStatus
 from flask_jwt_extended import create_access_token, jwt_required, get_current_user
 
 from app.models.user_model import UserModel
-from app.services import user_services as Users
+from app.services import user_service as Users
 
 
 def create():
