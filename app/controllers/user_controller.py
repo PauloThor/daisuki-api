@@ -1,19 +1,13 @@
 from flask import request, jsonify, current_app
 from http import HTTPStatus
-from flask_jwt_extended import create_access_token, jwt_required
-from flask_httpauth import HTTPAuth, HTTPTokenAuth
+from flask_jwt_extended import create_access_token, jwt_required, get_current_user
 
 from app.models.user_model import UserModel
+from app.services import user_services as Users
 
-auth = HTTPTokenAuth(scheme='Bearer')
 
 def create():
-    data = request.json
-
-    password_to_hash = data.pop('password')
-
-    new_user = UserModel(**data)
-    new_user.password = password_to_hash
+    new_user = Users.create_user(request.json)
 
     session = current_app.db.session
 
@@ -40,7 +34,8 @@ def login():
 
 @jwt_required()
 def update():
-
+    return ''
+    return jsonify(get_current_user())
     data = request.json
 
     # TODO MUDAR PRA PEGAR O USER PELO TOKEN
