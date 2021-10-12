@@ -19,7 +19,7 @@ class AnimeModel(db.Model):
  
    __tablename__ = 'animes'
  
-  
+ 
    id = Column(Integer, primary_key=True)
    name = Column(String(255), nullable=False, unique=True)
    synopsis = Column(String(1023), nullable=False)
@@ -29,5 +29,8 @@ class AnimeModel(db.Model):
    is_dubbed = Column(Boolean, nullable=False)
    is_completed = Column(Boolean, nullable=False)
    created_at = Column(DateTime(timezone=True), nullable=False)
+
+   animes = db.relationship('UserFavoriteAnimeModel', cascade='all, delete')
+
 
    

@@ -3,6 +3,7 @@ from datetime import datetime
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, DateTime
 from werkzeug.security import generate_password_hash, check_password_hash
+from app.models.user_favorite_anime_model import UserFavoriteAnimeModel
 
 from app.exc.UserErrors import InvalidPasswordError
 
@@ -27,6 +28,8 @@ class UserModel(db.Model):
     permission = Column(String(30), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
     password_hash = Column(String(511), nullable=False)
+
+    favorites = db.relationship('UserFavoriteAnimeModel', cascade='all, delete')
   
 
     @property
