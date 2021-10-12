@@ -29,7 +29,7 @@ def create():
             return {'msg': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
         
         if type(e.orig) == psycopg2.errors.UniqueViolation:
-            return {'msg': 'Usuário já existe'}, HTTPStatus.BAD_REQUEST
+            return {'msg': 'User already exists'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -90,7 +90,7 @@ def delete_self():
     session.delete(user_to_delete)
     session.commit()
 
-    return {"msg": "Usuário excluído"}, HTTPStatus.OK
+    return {"msg": "User deleted"}, HTTPStatus.OK
 
 
 @jwt_required()
@@ -104,12 +104,12 @@ def delete(id: int):
         session.delete(user_to_delete)
         session.commit()
 
-        return {"msg": "Usuário excluído"}, HTTPStatus.OK        
+        return {"msg": "User deleted"}, HTTPStatus.OK        
     except InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'Usuário não encontrado'}, HTTPStatus.BAD_REQUEST
+        return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
