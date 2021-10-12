@@ -1,0 +1,6 @@
+class InvalidPasswordError(Exception):
+    ...
+
+class InvalidPermissionError(Exception):
+    message = {'msg': 'Invalid permission'}
+    ...

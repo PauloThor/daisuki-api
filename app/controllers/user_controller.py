@@ -1,60 +1,153 @@
 from flask import request, jsonify, current_app
 from http import HTTPStatus
-from flask_jwt_extended import create_access_token, jwt_required, get_current_user
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import sqlalchemy
+from app.exc.UserErrors import InvalidPasswordError, InvalidPermissionError
+import psycopg2
+
 
 from app.models.user_model import UserModel
 from app.services import user_service as Users
 
 
 def create():
-    new_user = Users.create_user(request.json)
+    try:
+        new_user = Users.create_user(request.json)
 
-    session = current_app.db.session
+        session = current_app.db.session
 
-    session.add(new_user)
-    session.commit()
+        session.add(new_user)
+        session.commit()
 
-    return jsonify(new_user), HTTPStatus.CREATED
+        return jsonify(new_user), HTTPStatus.CREATED
+    except TypeError as e:
+        return {'msg': str(e)}, HTTPStatus.BAD_REQUEST
+
+    except sqlalchemy.exc.IntegrityError as e:
+    
+        if type(e.orig) == psycopg2.errors.NotNullViolation:
+            return {'msg': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
+        
+        if type(e.orig) == psycopg2.errors.UniqueViolation:
+            return {'msg': 'Usuário já existe'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def get_user(id: int):
+    try:        
+        found_user = UserModel.query.get(id)
+        if found_user == None:
+            return jsonify([])
+        return jsonify(found_user)
+    except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
+        return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def get_users():
+    return jsonify(UserModel.query.all()), HTTPStatus.OK
 
 
 def login():
     data = request.json
+    try:
+        found_user: UserModel = UserModel.query.filter_by(email=data['email']).one()
+        found_user.verify_password(data['password'])
 
-    found_user: UserModel = UserModel.query.filter_by(email=data['email']).first()
+        access_token = create_access_token(identity=found_user)
 
-    if not found_user:
-        return {"message": "User not found"}, HTTPStatus.NOT_FOUND
-    
-    if not found_user.verify_password(data['password']):
-        return {'message': 'Unauthorized'}, HTTPStatus.UNAUTHORIZED
-    
-    access_token = create_access_token(identity=found_user)
-    return {'access_token': access_token}, HTTPStatus.OK
+        return {'access_token': access_token}, HTTPStatus.OK
+
+    except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
+        return {'msg': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
 def update():
-    return ''
-    return jsonify(get_current_user())
     data = request.json
+    try:
+        found_user = get_jwt_identity()
+        data.pop('password')
+        UserModel.query.filter_by(id=found_user['id']).update(data)
+        
+        session = current_app.db.session
+        session.commit() 
 
-    # TODO MUDAR PRA PEGAR O USER PELO TOKEN
+        output = UserModel.query.get(found_user['id'])
 
-    found_user: UserModel = UserModel.query.filter_by(email=data['email']).first()
+        return jsonify(output), HTTPStatus.OK
+    except sqlalchemy.exc.InvalidRequestError as e:
+        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
 
-    if not found_user:
-        return {"message": "User not found"}, HTTPStatus.NOT_FOUND
-    
-    if not found_user.verify_password(data['password']):
-        return {'message': 'Unauthorized'}, HTTPStatus.UNAUTHORIZED
 
-    data.pop('password')
+@jwt_required()
+def delete_self():
+    found_user = get_jwt_identity()
 
-    UserModel.query.filter_by(email=data['email']).update(data)
-    
+    user_to_delete: UserModel = UserModel.query.get(found_user['id'])
+
     session = current_app.db.session
-    session.commit() 
+    session.delete(user_to_delete)
+    session.commit()
 
-    output = UserModel.query.get(found_user.id)
+    return {"msg": "Usuário excluído"}, HTTPStatus.OK
 
-    return jsonify(output), HTTPStatus.OK
+
+@jwt_required()
+def delete(id: int):
+    try:
+        Users.verify_admin()
+
+        user_to_delete: UserModel = UserModel.query.get(id)
+
+        session = current_app.db.session
+        session.delete(user_to_delete)
+        session.commit()
+
+        return {"msg": "Usuário excluído"}, HTTPStatus.OK        
+    except InvalidPermissionError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+
+    except sqlalchemy.exc.NoResultFound:
+        return {'msg': 'Usuário não encontrado'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def promote():
+    data = request.json
+    try:
+        Users.verify_admin()
+
+        UserModel.query.filter_by(email=data['email']).update({'permission': 'mod'})
+
+        session = current_app.db.session
+        session.commit() 
+
+        return '', HTTPStatus.OK
+    except InvalidPermissionError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+
+
+@jwt_required()
+def demote():
+    data = request.json
+    try:
+        Users.verify_admin()
+
+        UserModel.query.filter_by(email=data['email']).update({'permission': 'user'})
+
+        session = current_app.db.session
+        session.commit() 
+
+        return '', HTTPStatus.OK
+    except InvalidPermissionError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+
+
+@jwt_required()
+def get_mods():
+    all_users = UserModel.query.all()
+
+    output = [user for user in all_users if user.permission == 'mod']
+
+    return jsonify(output)
