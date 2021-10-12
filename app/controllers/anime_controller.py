@@ -15,6 +15,7 @@ def create():
         session = current_app.db.session
         session.add(new_anime)
         session.commit(new_anime)
+        
         return jsonify(new_anime), HTTPStatus.CREATED
     except InvalidImageError as e:
         return e.message, HTTPStatus.BAD_REQUEST
@@ -29,7 +30,7 @@ def create():
 # **Rota protegida** - Apenas um mod ou adm podem acessar a rota
 
 # É preciso que os gêneros sejam mapeados para fazer a relação. Corpo da requisição:
-# ​
+# ​Erro se db estiver vazio
 # ```json
 # {
 #   "name": "Kobayashi-san Chi no Maid Dragon S",
