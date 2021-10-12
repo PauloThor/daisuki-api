@@ -4,6 +4,8 @@ from app.configs.database import db
 from sqlalchemy import Column, String, Integer, DateTime
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from app.exc.UserErrors import InvalidPasswordError
+
 
 @dataclass
 class UserModel(db.Model):
@@ -38,4 +40,6 @@ class UserModel(db.Model):
 
 
     def verify_password(self, password_to_compare):
-        return check_password_hash(self.password_hash, password_to_compare)
+        is_valid = check_password_hash(self.password_hash, password_to_compare)
+        if not is_valid:
+            raise InvalidPasswordError 
