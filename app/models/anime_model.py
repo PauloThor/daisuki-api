@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
+
+from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
- 
+
 
 @dataclass
 class AnimeModel(db.Model):
- 
    id: int
    name: str
    synopsis: str
@@ -31,6 +32,5 @@ class AnimeModel(db.Model):
    created_at = Column(DateTime(timezone=True), nullable=False)
 
    animes = db.relationship('UserFavoriteAnimeModel', cascade='all, delete')
-
-
    
+   genres = relationship('GenreAnimeModel')

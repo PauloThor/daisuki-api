@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer
 
@@ -11,3 +12,5 @@ class GenreModel(db.Model):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
+
+    animes = relationship('GenreAnimeModel')

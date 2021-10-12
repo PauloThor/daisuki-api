@@ -22,6 +22,7 @@ def create_user(data):
 
     return new_user
 
+
 def verify_admin():
     user_permission = get_jwt_identity()['permission']
 
