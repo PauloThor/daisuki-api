@@ -7,8 +7,6 @@ import psycopg2
 
 
 from app.models.user_model import UserModel
-from app.models.anime_model import AnimeModel
-from app.models.user_favorite_anime_model import UserFavoriteAnimeModel
 from app.services import user_service as Users
 
 
@@ -183,27 +181,3 @@ def get_mods():
     output = [user for user in all_users if user.permission == 'mod']
 
     return jsonify(output)
-
-
-@jwt_required()
-def post_favorite(anime_id: int):
-    found_user = get_jwt_identity()
-
-    anime = AnimeModel.query.get(anime_id)
-    user = UserModel.query.get(found_user['id'])
-
-    rel = UserFavoriteAnimeModel(user_id=user.id, anime_id=anime.id)
-
-    user.favorites.append(rel)
-
-    session = current_app.db.session
-    session.commit() 
-
-    return '', HTTPStatus.OK
-
-
-@jwt_required()
-def get_favorites():
-    found_user = get_jwt_identity()
-
-    return jsonify(found_user.favorites)
