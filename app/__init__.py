@@ -5,7 +5,6 @@ from app.routes import api_blueprint
 
 
 def create_app():
-
     app = Flask(__name__)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = getenv('SQLALCHEMY_DATABASE_URI')

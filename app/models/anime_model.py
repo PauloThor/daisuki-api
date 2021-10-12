@@ -8,7 +8,6 @@ from sqlalchemy import Column, String, Integer, Boolean, DateTime
 
 @dataclass
 class AnimeModel(db.Model):
- 
    id: int
    name: str
    synopsis: str
@@ -21,7 +20,6 @@ class AnimeModel(db.Model):
  
    __tablename__ = 'animes'
  
-  
    id = Column(Integer, primary_key=True)
    name = Column(String(255), nullable=False, unique=True)
    synopsis = Column(String(1023), nullable=False)

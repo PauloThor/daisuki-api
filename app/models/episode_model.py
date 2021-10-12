@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql.schema import ForeignKey
 from datetime import datetime
 
+
 @dataclass
 class EpisodeModel(db.Model):
     id: int
