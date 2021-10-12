@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, DateTime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,7 +27,7 @@ class UserModel(db.Model):
     created_at = Column(DateTime(timezone=True), nullable=False)
     password_hash = Column(String(511), nullable=False)
 
-    favorites = db.relationship('UserFavoriteAnimeModel', cascade='all, delete')
+    favorites = relationship('UserFavoriteAnimeModel', backref="users_favorites_animes", cascade='all, delete')
   
     @property
     def password(self):

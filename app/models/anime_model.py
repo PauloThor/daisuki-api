@@ -31,6 +31,6 @@ class AnimeModel(db.Model):
    is_completed = Column(Boolean, nullable=False)
    created_at = Column(DateTime(timezone=True), nullable=False)
 
-   users_favorited = db.relationship('UserFavoriteAnimeModel', cascade='all, delete')
+   users_favorite = relationship('UserFavoriteAnimeModel', cascade='all, delete')
    
    genres = relationship('GenreAnimeModel')

@@ -205,5 +205,8 @@ def post_favorite(anime_id: int):
 @jwt_required()
 def get_favorites():
     found_user = get_jwt_identity()
+    query = UserModel.query.get(found_user['id'])
 
-    return jsonify(found_user.favorites)
+    output = [anime.anime.name for anime in query.favorites]
+
+    return jsonify(output)
