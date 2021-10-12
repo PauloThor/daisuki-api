@@ -2,11 +2,13 @@ from flask import request, jsonify, current_app
 from http import HTTPStatus
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import sqlalchemy
-from app.exc.UserErrors import InvalidPasswordError, InvalidPermissionError
+from app.exc.UserErrors import InvalidPasswordError, InvalidPermissionError, InvalidUsernameError
 import psycopg2
 
 
 from app.models.user_model import UserModel
+from app.models.anime_model import AnimeModel
+from app.models.user_favorite_anime_model import UserFavoriteAnimeModel
 from app.services import user_service as Users
 
 
@@ -31,14 +33,20 @@ def create():
         if type(e.orig) == psycopg2.errors.UniqueViolation:
             return {'msg': 'User already exists'}, HTTPStatus.BAD_REQUEST
 
+    except InvalidUsernameError:
+         return {"msg": "Username already exists"}, HTTPStatus.BAD_REQUEST
 
-@jwt_required()
+
 def get_user(id: int):
     try:        
         found_user = UserModel.query.get(id)
         if found_user == None:
             return jsonify([])
-        return jsonify(found_user)
+        return jsonify({
+            'username': found_user.username,
+            'avatar_url': found_user.avatar_url
+        })
+
     except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
         return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
 
@@ -78,6 +86,30 @@ def update():
         return jsonify(output), HTTPStatus.OK
     except sqlalchemy.exc.InvalidRequestError as e:
         return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def update_password():
+    data = request.json
+    try:
+        found_user = UserModel.query.get(get_jwt_identity()['id'])
+        found_user.verify_password(data['password'])
+        found_user.password = data['newPassword']
+
+        session = current_app.db.session
+
+        session.add(found_user)
+        session.commit()
+
+        return {'msg': 'Password updated'}, HTTPStatus.OK
+    except sqlalchemy.exc.InvalidRequestError as e:
+        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+    
+    except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
+        return {'msg': 'Incorrect password'}, HTTPStatus.BAD_REQUEST
+    
+    except KeyError as e:
+        return {'msg': f'{str(e.args[0])} is missing'}
 
 
 @jwt_required()
@@ -151,3 +183,27 @@ def get_mods():
     output = [user for user in all_users if user.permission == 'mod']
 
     return jsonify(output)
+
+
+@jwt_required()
+def post_favorite(anime_id: int):
+    found_user = get_jwt_identity()
+
+    anime = AnimeModel.query.get(anime_id)
+    user = UserModel.query.get(found_user['id'])
+
+    rel = UserFavoriteAnimeModel(user_id=user.id, anime_id=anime.id)
+
+    user.favorites.append(rel)
+
+    session = current_app.db.session
+    session.commit() 
+
+    return '', HTTPStatus.OK
+
+
+@jwt_required()
+def get_favorites():
+    found_user = get_jwt_identity()
+
+    return jsonify(found_user.favorites)
