@@ -14,6 +14,7 @@ bp.delete('/<int:id>')(Controller.delete)
 bp.put('/moderators')(Controller.promote)
 bp.delete('/moderators')(Controller.demote)
 bp.get('/moderators')(Controller.get_mods)
+bp.patch('/update-avatar')(Controller.update_avatar)
 
 bp.put('/favorites/<int:anime_id>')(Controller.post_favorite)
 bp.get('/favorites')(Controller.get_favorites)

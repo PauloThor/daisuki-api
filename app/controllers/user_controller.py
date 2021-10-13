@@ -5,11 +5,10 @@ import sqlalchemy
 from app.exc import user_error as UserErrors
 import psycopg2
 
-
 from app.models.user_model import UserModel
 from app.models.anime_model import AnimeModel
-from app.models.user_favorite_anime_model import UserFavoriteAnimeModel
 from app.services import user_service as Users
+from app.services.imgur_service import upload_image
 
 
 def create():
@@ -245,3 +244,18 @@ def delete_favorite(anime_id: int):
         return '', HTTPStatus.OK
     except ValueError:
         return {'msg': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def update_avatar():
+    found_user = get_jwt_identity()
+    image_url  = upload_image(request.files['image'])
+    
+    UserModel.query.filter_by(id=found_user['id']).update({'avatar_url': image_url})
+
+    session = current_app.db.session
+    session.commit()
+
+    return {"avatar_url": image_url}, HTTPStatus.OK
+
+    
