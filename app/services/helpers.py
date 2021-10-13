@@ -1,5 +1,5 @@
 from app.exc import InvalidImageError
-from app.exc.UserErrors import InvalidPermissionError
+from app.exc.user_error import InvalidPermissionError
 from flask_jwt_extended import get_jwt_identity
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}

@@ -2,7 +2,7 @@ from flask import request, current_app, jsonify
 from flask_jwt_extended import jwt_required
 from http import HTTPStatus
 from app.services import anime_service as Animes
-from app.exc.UserErrors import InvalidPermissionError
+from app.exc.user_error import InvalidPermissionError
 from app.exc import InvalidImageError
 import werkzeug
 import sqlalchemy
