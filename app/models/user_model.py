@@ -5,7 +5,7 @@ from app.configs.database import db
 from sqlalchemy import Column, String, Integer, DateTime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app.exc.UserErrors import InvalidPasswordError
+from app.exc.user_error import InvalidPasswordError
 
 
 @dataclass
@@ -27,7 +27,7 @@ class UserModel(db.Model):
     created_at = Column(DateTime(timezone=True), nullable=False)
     password_hash = Column(String(511), nullable=False)
 
-    favorites = relationship('UserFavoriteAnimeModel', backref="users_favorites_animes", cascade='all, delete')
+    favorites = relationship('AnimeModel', backref="favorites", secondary='users_favorites_animes', cascade='all, delete')
   
     @property
     def password(self):

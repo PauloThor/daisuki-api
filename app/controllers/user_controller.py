@@ -2,7 +2,7 @@ from flask import request, jsonify, current_app
 from http import HTTPStatus
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import sqlalchemy
-from app.exc.UserErrors import InvalidPasswordError, InvalidPermissionError, InvalidUsernameError
+from app.exc import user_error as UserErrors
 import psycopg2
 
 
@@ -33,7 +33,7 @@ def create():
         if type(e.orig) == psycopg2.errors.UniqueViolation:
             return {'msg': 'User already exists'}, HTTPStatus.BAD_REQUEST
 
-    except InvalidUsernameError:
+    except UserErrors.InvalidUsernameError:
          return {"msg": "Username already exists"}, HTTPStatus.BAD_REQUEST
 
 
@@ -47,7 +47,7 @@ def get_user(id: int):
             'avatar_url': found_user.avatar_url
         })
 
-    except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
+    except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
         return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
 
 
@@ -66,7 +66,7 @@ def login():
 
         return {'access_token': access_token}, HTTPStatus.OK
 
-    except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
+    except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
         return {'msg': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
 
 
@@ -105,7 +105,7 @@ def update_password():
     except sqlalchemy.exc.InvalidRequestError as e:
         return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
     
-    except (sqlalchemy.exc.NoResultFound, InvalidPasswordError):
+    except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
         return {'msg': 'Incorrect password'}, HTTPStatus.BAD_REQUEST
     
     except KeyError as e:
@@ -137,7 +137,7 @@ def delete(id: int):
         session.commit()
 
         return {"msg": "User deleted"}, HTTPStatus.OK        
-    except InvalidPermissionError as e:
+    except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
     except sqlalchemy.exc.NoResultFound:
@@ -156,7 +156,7 @@ def promote():
         session.commit() 
 
         return '', HTTPStatus.OK
-    except InvalidPermissionError as e:
+    except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
 
@@ -172,7 +172,7 @@ def demote():
         session.commit() 
 
         return '', HTTPStatus.OK
-    except InvalidPermissionError as e:
+    except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
 
@@ -189,24 +189,59 @@ def get_mods():
 def post_favorite(anime_id: int):
     found_user = get_jwt_identity()
 
-    anime = AnimeModel.query.get(anime_id)
-    user = UserModel.query.get(found_user['id'])
+    try:
+        anime = AnimeModel.query.get(anime_id)
+        user = UserModel.query.get(found_user['id'])
 
-    rel = UserFavoriteAnimeModel(user_id=user.id, anime_id=anime.id)
+        if anime in user.favorites:
+            raise UserErrors.InvalidFavoriteError
 
-    user.favorites.append(rel)
+        user.favorites.append(anime)
 
-    session = current_app.db.session
-    session.commit() 
+        session = current_app.db.session
+        session.commit() 
 
-    return '', HTTPStatus.OK
+        return '', HTTPStatus.OK
+    except UserErrors.InvalidFavoriteError:
+        return {'msg': f'User has already favorited {anime.name}'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
 def get_favorites():
-    found_user = get_jwt_identity()
-    query = UserModel.query.get(found_user['id'])
+    args = request.args
+    try:
+        page = 1 if 'page' not in args else int(args['page'])
+        size = 10 if 'size' not in args else int(args['size'])
 
-    output = [anime.anime.name for anime in query.favorites]
+        found_user = get_jwt_identity()
+        query = UserModel.query.get(found_user['id'])
 
-    return jsonify(output)
+        paginated = []
+        for index, item in enumerate(query.favorites):
+            if index >= (page-1) * size and index < page * size:
+                paginated.append(item)
+
+        output = [{'id': anime.id, 'name': anime.name} for anime in paginated]
+
+        return jsonify(output), HTTPStatus.OK
+    except ValueError:
+        return {'msg': 'Arguments should be integers'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def delete_favorite(anime_id: int):
+    try:
+        found_user = get_jwt_identity()
+
+        anime = AnimeModel.query.get(anime_id)
+        user = UserModel.query.get(found_user['id'])
+
+        index = user.favorites.index(anime)
+        user.favorites.pop(index)
+
+        session = current_app.db.session
+        session.commit() 
+
+        return '', HTTPStatus.OK
+    except ValueError:
+        return {'msg': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST

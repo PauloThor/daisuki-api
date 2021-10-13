@@ -1,4 +1,4 @@
-from app.exc.UserErrors import InvalidPermissionError, InvalidUsernameError
+from app.exc.user_error import InvalidPermissionError, InvalidUsernameError
 from app.models.user_model import UserModel
 from datetime import datetime
 from flask_jwt_extended import get_jwt_identity
