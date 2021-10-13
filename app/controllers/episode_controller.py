@@ -1,6 +1,6 @@
 from app.models.episode_model import EpisodeModel
 from app.exc import InvalidImageError, DuplicatedDataError
-from app.exc.UserErrors import InvalidPermissionError
+from app.exc.user_error import InvalidPermissionError
 from app.services import episode_service as Episode
 from app.services.helpers import paginate
 from flask import request, jsonify, current_app

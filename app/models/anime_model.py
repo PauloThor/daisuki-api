@@ -20,6 +20,7 @@ class AnimeModel(db.Model):
  
    __tablename__ = 'animes'
  
+  
    id = Column(Integer, primary_key=True)
    name = Column(String(255), nullable=False, unique=True)
    synopsis = Column(String(1023), nullable=False)
