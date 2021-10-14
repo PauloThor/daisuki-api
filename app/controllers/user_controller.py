@@ -6,7 +6,7 @@ from app.exc import user_error as UserErrors
 from app.models.anime_model import AnimeModel
 from app.models.user_model import UserModel
 from app.services import user_service as Users
-from app.services.helpers import decode_json, encode_json
+from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
@@ -50,7 +50,7 @@ def get_user(id: int):
 
 @jwt_required()
 def get_users():
-    return jsonify(UserModel.query.all()), HTTPStatus.OK
+    return encode_list_json(UserModel.query.all()), HTTPStatus.OK
 
 
 def login():

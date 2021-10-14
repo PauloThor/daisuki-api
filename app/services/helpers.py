@@ -67,3 +67,8 @@ def decode_json(data: dict) -> dict:
 def encode_json(model) -> dict: 
     data = asdict(model)
     return jsonify(humps.camelize(data))
+
+
+def encode_list_json(data: list) -> list:
+    output = [humps.camelize(asdict(model)) for model in data]
+    return jsonify(output)
