@@ -27,11 +27,10 @@ def set_anime_genres(genres: list, anime: AnimeModel, session) -> AnimeModel:
         genre = genre.strip()
         db_genre = GenreModel.query.filter(GenreModel.name.ilike(genre)).first()
         if not db_genre:
-            db_genre = GenreModel(**genre)
+            db_genre = GenreModel(name=genre)
             session.add(db_genre)
             session.commit()
-        rel = GenreAnimeModel(genre_id=db_genre.id)
-        anime.genres.append(rel)
+        anime.genres.append(db_genre)
     session.commit()
 
     return anime
