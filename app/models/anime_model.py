@@ -33,4 +33,4 @@ class AnimeModel(db.Model):
 
    genres = relationship('GenreModel', backref='animes', secondary='genres_animes')
    episodes = relationship('EpisodeModel', backref='anime', cascade='all, delete')
-   ratings = relationship('UserModel', secondary='animes_ratings', cascade='all, delete')
+   ratings = relationship('UserModel', backref='ratings', secondary='animes_ratings', cascade='all, delete')
