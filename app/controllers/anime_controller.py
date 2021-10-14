@@ -13,8 +13,9 @@ from app.services import anime_service as Animes
 from app.services import user_service as Users
 from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
-from flask import current_app, request
+from flask import current_app, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
 
 
 @jwt_required()
@@ -42,7 +43,7 @@ def create():
 @jwt_required()
 def update(id: int):
     try:
-        Users.verify_admin()
+        # Users.verify_admin()
 
         data = decode_json(request.json)
 
@@ -65,7 +66,7 @@ def update(id: int):
 @jwt_required()
 def update_avatar(id: int):
     try:
-        Users.verify_admin()
+        # Users.verify_admin()
 
         AnimeModel.query.filter_by(id=id).one()
 
@@ -85,13 +86,24 @@ def update_avatar(id: int):
 
 
 def get_animes():
+    
+    
+
     return encode_list_json(AnimeModel.query.all())
+    
+
+
+def get_latest_animes():
+    animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
+    return encode_list_json(animes)
+
+
 
 
 @jwt_required()
 def delete(id: int):
     try:
-        Users.verify_admin()
+        # Users.verify_admin()
 
         anime_to_delete: AnimeModel = AnimeModel.query.get(id)
 
