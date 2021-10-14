@@ -31,4 +31,5 @@ class AnimeModel(db.Model):
    is_completed = Column(Boolean, nullable=False)
    created_at = Column(DateTime(timezone=True), nullable=False)
 
-   genres = relationship('GenreAnimeModel')
+   genres = relationship('GenreModel', backref='animes', secondary='genres_animes')
+   episodes = relationship('EpisodeModel', backref='anime', cascade='all, delete')
