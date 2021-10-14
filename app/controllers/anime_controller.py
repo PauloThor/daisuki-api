@@ -8,6 +8,7 @@ from app.exc import user_error as UserErrors
 from app.exc.anime_errors import InvalidRating
 from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
+from app.models.user_model import UserModel
 from app.models.anime_rating_model import AnimeRatingModel
 from app.services import anime_service as Animes
 from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
@@ -106,40 +107,30 @@ def delete(id: int):
 
 
 @jwt_required()
-def create_or_update_rating(id: int):
+def set_rating(id: int):
     try:
         data = request.json
-
         if not data['rating'] in [1,2,3,4,5]:
             raise InvalidRating
 
-        user = get_jwt_identity()
-
-        query = AnimeRatingModel.query.filter(AnimeRatingModel.user_id == user['id'],AnimeRatingModel.anime_id == id).first()
+        current_user = get_jwt_identity()
+        user : UserModel = UserModel.query.get(current_user['id'])
+        anime : AnimeModel = AnimeModel.query.get(id)
+        if not anime:
+            return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
         session = current_app.db.session
 
-        if(query):
-            for key, value in data.items():
-                    setattr(query, key, value)
-
-            session.add(query)
+        if anime in user.ratings:
+            AnimeRatingModel.query.filter(AnimeRatingModel.anime_id == anime.id, AnimeRatingModel.user_id == user.id).update(data)
             session.commit()
+            return '', HTTPStatus.OK
 
-            return encode_json(query), HTTPStatus.OK
-        else:
-            rating = AnimeRatingModel(**data)
-
-            session.add(rating)
-            session.commit()
-
-            return encode_json(rating), HTTPStatus.CREATED
-
-    except TypeError:
-        return {'message': 'Invalid key'}, HTTPStatus.BAD_REQUEST
+        rating = AnimeRatingModel(rating=data['rating'], user_id=user.id, anime_id=anime.id)
+        session.add(rating)
+        session.commit()
+        return encode_json(rating), HTTPStatus.CREATED
     except sqlalchemy.exc.DataError:
         return {'Invalid Key': {'rating':data['rating']}}, HTTPStatus.BAD_REQUEST
-    except werkzeug.exceptions.BadRequest:
-        return {'message': 'The request needs a JSON with the "rating" field containing a number from 1 to 5'}, HTTPStatus.BAD_REQUEST
     except InvalidRating:
         return {'message': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
