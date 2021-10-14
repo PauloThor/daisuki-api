@@ -35,21 +35,17 @@ def create():
             return {'msg': 'User already exists'}, HTTPStatus.BAD_REQUEST
 
     except UserErrors.InvalidUsernameError:
-         return {"msg": "Username already exists"}, HTTPStatus.BAD_REQUEST
+         return {'msg': 'Username already exists'}, HTTPStatus.BAD_REQUEST
 
 
-def get_user(id: int):
-    try:        
-        found_user = UserModel.query.get(id)
-        if found_user == None:
-            return jsonify([])
-        return jsonify({
-            'username': found_user.username,
-            'avatar_url': found_user.avatar_url
-        })
-
-    except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
-        return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
+def get_user(id: int):      
+    found_user = UserModel.query.get(id)
+    if not found_user:
+        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
+    return jsonify({
+        'username': found_user.username,
+        'avatarUrl': found_user.avatar_url
+    })
 
 
 @jwt_required()
