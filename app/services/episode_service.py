@@ -16,7 +16,7 @@ def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session)
 
     check_anime_completed(anime.name, form['episodeNumber'], session)
 
-    if verify_episode_exists(form['episodeNumber']):
+    if verify_episode_exists(int(form['episodeNumber'])):
         raise DuplicatedDataError('Episode')
 
     new_episode = EpisodeModel (episode_number=int(form['episodeNumber']))

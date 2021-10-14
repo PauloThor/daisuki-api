@@ -19,7 +19,7 @@ def create_episode():
         session.add(new_episode)
         session.commit()
 
-        return jsonify(new_episode), HTTPStatus.CREATED
+        return encode_json(new_episode), HTTPStatus.CREATED
     except InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except InvalidImageError as e:
