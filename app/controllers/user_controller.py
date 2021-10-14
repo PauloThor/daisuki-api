@@ -1,26 +1,28 @@
-from flask import request, jsonify, current_app
 from http import HTTPStatus
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+
+import psycopg2
 import sqlalchemy
 from app.exc import user_error as UserErrors
-import psycopg2
-
-from app.models.user_model import UserModel
 from app.models.anime_model import AnimeModel
+from app.models.user_model import UserModel
 from app.services import user_service as Users
+from app.services.helpers import decode_json, encode_json
 from app.services.imgur_service import upload_image
+from flask import current_app, jsonify, request
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 
 
 def create():
+    data = decode_json(request.json)
     try:
-        new_user = Users.create_user(request.json)
+        new_user = Users.create_user(data)
 
         session = current_app.db.session
 
         session.add(new_user)
         session.commit()
 
-        return jsonify(new_user), HTTPStatus.CREATED
+        return encode_json(new_user), HTTPStatus.CREATED
     except TypeError as e:
         return {'msg': str(e)}, HTTPStatus.BAD_REQUEST
 

@@ -1,8 +1,11 @@
+from dataclasses import asdict
+from math import ceil
+
+import humps
 from app.exc import InvalidImageError, PageNotFoundError
 from app.exc.user_error import InvalidPermissionError
-from flask import request
+from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity
-from math import ceil
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}
 
@@ -55,3 +58,12 @@ def paginate(data_list, per_page=12, page=1):
             "next_page": f'page={next_page}&per_page={per_page}' if next_page else next_page,
             "data": data_list[((page-1)*per_page):(page*per_page)]
         }
+
+
+def decode_json(data: dict) -> dict:
+    return humps.decamelize(data)
+
+
+def encode_json(model) -> dict: 
+    data = asdict(model)
+    return jsonify(humps.camelize(data))
