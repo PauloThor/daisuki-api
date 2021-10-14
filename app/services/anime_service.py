@@ -1,10 +1,10 @@
-from werkzeug.datastructures import ImmutableMultiDict
+from datetime import datetime
+
 from app.models.anime_model import AnimeModel
 from app.models.genre_model import GenreModel
-from app.models.genre_anime_model import GenreAnimeModel
-from app.services.imgur_service import upload_image
 from app.services.helpers import verify_admin_mod
-from datetime import datetime
+from app.services.imgur_service import upload_image
+from werkzeug.datastructures import ImmutableMultiDict
 
 
 def create_anime(files: ImmutableMultiDict, form: ImmutableMultiDict) -> AnimeModel:
