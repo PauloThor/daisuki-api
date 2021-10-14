@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from app.exc import DuplicatedDataError, InvalidImageError
 from app.exc.user_error import InvalidPermissionError
+from app.models.episode_model import EpisodeModel
 from app.services import episode_service as Episode
 from app.services.helpers import encode_json, paginate
 from flask import current_app, request
@@ -63,3 +64,7 @@ def get_comment():
 @jwt_required()
 def delete_comment():
     ...
+
+
+def watch(id: int):
+    episode = EpisodeModel.query.get(id)

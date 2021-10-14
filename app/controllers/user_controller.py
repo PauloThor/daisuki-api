@@ -71,7 +71,13 @@ def update():
     data = decode_json(request.json)
     try:
         found_user = get_jwt_identity()
-        data.pop('password')
+        if 'password' in data:
+            data.pop('password')
+        if 'created_at' in data:
+            data.pop('created_at')
+        if 'permission' in data:
+            data.pop('permission')
+
         UserModel.query.filter_by(id=found_user['id']).update(data)
         
         current_app.db.session.commit() 
@@ -117,7 +123,7 @@ def delete_self():
     session.delete(user_to_delete)
     session.commit()
 
-    return {'message': 'User deleted'}, HTTPStatus.OK
+    return jsonify(user_to_delete), HTTPStatus.OK
 
 
 @jwt_required()
@@ -131,7 +137,7 @@ def delete(id: int):
         session.delete(user_to_delete)
         session.commit()
 
-        return {'message': 'User deleted'}, HTTPStatus.OK        
+        return jsonify(user_to_delete), HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
