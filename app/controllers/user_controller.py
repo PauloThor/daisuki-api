@@ -1,14 +1,15 @@
-from flask import request, jsonify, current_app
 from http import HTTPStatus
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+
+import psycopg2
 import sqlalchemy
 from app.exc import user_error as UserErrors
-import psycopg2
-
-from app.models.user_model import UserModel
 from app.models.anime_model import AnimeModel
+from app.models.user_model import UserModel
 from app.services import user_service as Users
+from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
+from flask import current_app, jsonify, request
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 
 
 def create():
@@ -20,39 +21,35 @@ def create():
         session.add(new_user)
         session.commit()
 
-        return jsonify(new_user), HTTPStatus.CREATED
+        return encode_json(new_user), HTTPStatus.CREATED
     except TypeError as e:
-        return {'msg': str(e)}, HTTPStatus.BAD_REQUEST
+        return {'message': str(e)}, HTTPStatus.BAD_REQUEST
 
     except sqlalchemy.exc.IntegrityError as e:
     
         if type(e.orig) == psycopg2.errors.NotNullViolation:
-            return {'msg': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
+            return {'message': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
         
         if type(e.orig) == psycopg2.errors.UniqueViolation:
-            return {'msg': 'User already exists'}, HTTPStatus.BAD_REQUEST
+            return {'message': 'Email already registered'}, HTTPStatus.BAD_REQUEST
 
     except UserErrors.InvalidUsernameError:
-         return {"msg": "Username already exists"}, HTTPStatus.BAD_REQUEST
+         return {'message': 'Username already exists'}, HTTPStatus.BAD_REQUEST
 
 
-def get_user(id: int):
-    try:        
-        found_user = UserModel.query.get(id)
-        if found_user == None:
-            return jsonify([])
-        return jsonify({
-            'username': found_user.username,
-            'avatar_url': found_user.avatar_url
-        })
-
-    except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
-        return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
+def get_user(id: int):      
+    found_user = UserModel.query.get(id)
+    if not found_user:
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
+    return jsonify({
+        'username': found_user.username,
+        'avatarUrl': found_user.avatar_url
+    })
 
 
 @jwt_required()
 def get_users():
-    return jsonify(UserModel.query.all()), HTTPStatus.OK
+    return encode_list_json(UserModel.query.all()), HTTPStatus.OK
 
 
 def login():
@@ -63,28 +60,27 @@ def login():
 
         access_token = create_access_token(identity=found_user)
 
-        return {'access_token': access_token}, HTTPStatus.OK
+        return {'accessToken': access_token}, HTTPStatus.OK
 
     except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
-        return {'msg': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
 def update():
-    data = request.json
+    data = decode_json(request.json)
     try:
         found_user = get_jwt_identity()
         data.pop('password')
         UserModel.query.filter_by(id=found_user['id']).update(data)
         
-        session = current_app.db.session
-        session.commit() 
+        current_app.db.session.commit() 
 
         output = UserModel.query.get(found_user['id'])
 
-        return jsonify(output), HTTPStatus.OK
+        return encode_json(output), HTTPStatus.OK
     except sqlalchemy.exc.InvalidRequestError as e:
-        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+        return {'message': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -100,15 +96,15 @@ def update_password():
         session.add(found_user)
         session.commit()
 
-        return {'msg': 'Password updated'}, HTTPStatus.OK
+        return {'message': 'Password updated'}, HTTPStatus.OK
     except sqlalchemy.exc.InvalidRequestError as e:
-        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+        return {'message': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
     
     except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
-        return {'msg': 'Incorrect password'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Incorrect password'}, HTTPStatus.BAD_REQUEST
     
     except KeyError as e:
-        return {'msg': f'{str(e.args[0])} is missing'}
+        return {'message': f'{str(e.args[0])} is missing'}
 
 
 @jwt_required()
@@ -121,7 +117,7 @@ def delete_self():
     session.delete(user_to_delete)
     session.commit()
 
-    return {"msg": "User deleted"}, HTTPStatus.OK
+    return {'message': 'User deleted'}, HTTPStatus.OK
 
 
 @jwt_required()
@@ -135,12 +131,12 @@ def delete(id: int):
         session.delete(user_to_delete)
         session.commit()
 
-        return {"msg": "User deleted"}, HTTPStatus.OK        
+        return {'message': 'User deleted'}, HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -149,14 +145,16 @@ def promote():
     try:
         Users.verify_admin()
 
+        UserModel.query.filter_by(email=data['email']).one()
         UserModel.query.filter_by(email=data['email']).update({'permission': 'mod'})
 
-        session = current_app.db.session
-        session.commit() 
+        current_app.db.session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
+    except sqlalchemy.exc.NoResultFound:
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -165,14 +163,16 @@ def demote():
     try:
         Users.verify_admin()
 
+        UserModel.query.filter_by(email=data['email']).one()
         UserModel.query.filter_by(email=data['email']).update({'permission': 'user'})
 
-        session = current_app.db.session
-        session.commit() 
+        current_app.db.session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
+    except sqlalchemy.exc.NoResultFound:
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -181,7 +181,7 @@ def get_mods():
 
     output = [user for user in all_users if user.permission == 'mod']
 
-    return jsonify(output)
+    return encode_list_json(output)
 
 
 @jwt_required()
@@ -200,9 +200,9 @@ def post_favorite(anime_id: int):
         session = current_app.db.session
         session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidFavoriteError:
-        return {'msg': f'User has already favorited {anime.name}'}, HTTPStatus.BAD_REQUEST
+        return {'message': f'User has already favorited {anime.name}'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -224,7 +224,7 @@ def get_favorites():
 
         return jsonify(output), HTTPStatus.OK
     except ValueError:
-        return {'msg': 'Arguments should be integers'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Arguments should be integers'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -241,9 +241,9 @@ def delete_favorite(anime_id: int):
         session = current_app.db.session
         session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except ValueError:
-        return {'msg': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST
+        return {'message': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -256,6 +256,5 @@ def update_avatar():
     session = current_app.db.session
     session.commit()
 
-    return {"avatar_url": image_url}, HTTPStatus.OK
-
-    
+    return {'avatarUrl': image_url}, HTTPStatus.OK
+ 

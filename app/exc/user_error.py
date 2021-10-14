@@ -1,11 +1,15 @@
 class InvalidPasswordError(Exception):
     ...
 
+
 class InvalidPermissionError(Exception):
-    message = {'msg': 'Invalid permission'}
+    message = {'message': 'Invalid permission'}
     ...
+
+
 class InvalidUsernameError(Exception):
     ...
+
 
 class InvalidFavoriteError(Exception):
     ...

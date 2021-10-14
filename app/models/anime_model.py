@@ -35,9 +35,4 @@ class AnimeModel(db.Model):
 
    genres = relationship('GenreModel', backref='animes', secondary='genres_animes')
    episodes = relationship('EpisodeModel', backref='anime', cascade='all, delete')
-   rating = relationship("AnimeRatingModel", backref="animes_ratings", cascade='all, delete')
-
-   
-   def get_clean_name():
-      print(re.sub('(?=.*[}{,.^?~=+\-_\/*\-+.\|])(?=.*[a-zA-Z])(?=.*[0-9]).{8,}', '', AnimeModel.name))
-      return re.sub('(?=.*[}{,.^?~=+\-_\/*\-+.\|])(?=.*[a-zA-Z])(?=.*[0-9]).{8,}', '', AnimeModel.name)
+   ratings = relationship('UserModel', backref='ratings', secondary='animes_ratings', cascade='all, delete')

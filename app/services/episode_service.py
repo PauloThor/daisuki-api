@@ -14,15 +14,15 @@ def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session)
     image_url  = upload_image(files['image'])
     anime = AnimeModel.query.filter_by(name=form['anime']).first()
 
-    check_anime_completed(anime.name, form['episode_number'], session)
+    check_anime_completed(anime.name, form['episodeNumber'], session)
 
-    if verify_episode_exists(form['episode_number']):
+    if verify_episode_exists(int(form['episodeNumber'])):
         raise DuplicatedDataError('Episode')
 
-    new_episode = EpisodeModel (episode_number=int(form['episode_number']))
+    new_episode = EpisodeModel (episode_number=int(form['episodeNumber']))
     new_episode.anime_id = int(anime.id)
     new_episode.image_url = image_url
-    new_episode.video_url = form['video_url']
+    new_episode.video_url = form['videoUrl']
     new_episode.created_at = datetime.utcnow()
 
     return new_episode
