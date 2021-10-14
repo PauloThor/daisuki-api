@@ -1,7 +1,10 @@
 from flask import request, current_app, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import and_
 from http import HTTPStatus
+from app.exc.anime_errors import InvalidRating
 from app.models.anime_model import AnimeModel
+from app.models.anime_rating_model import AnimeRatingModel
 from app.services import anime_service as Animes
 from app.services.imgur_service import upload_image
 from app.services import user_service as Users
@@ -98,3 +101,48 @@ def delete(id: int):
 
 
 
+@jwt_required()
+def create_or_update_rating(id: int):
+    try:
+        data = request.json
+
+        if not data['rating'] in [1,2,3,4,5]:
+            raise InvalidRating
+
+        user = get_jwt_identity()
+        data['user_id'] = user['id']
+        data['anime_id'] = id
+
+        query = AnimeRatingModel.query.filter(
+        and_(
+            AnimeRatingModel.user_id == user['id'],
+            AnimeRatingModel.anime_id == id
+        )
+        ).first()
+
+        session = current_app.db.session
+
+        if(query):
+            for key, value in data.items():
+                    setattr(query, key, value)
+
+            session.add(query)
+            session.commit()
+
+            return jsonify(query), HTTPStatus.OK
+        else:
+            rating = AnimeRatingModel(**data)
+
+            session.add(rating)
+            session.commit()
+
+            return jsonify(rating), HTTPStatus.CREATED
+
+    except TypeError:
+        return {'msg': 'invalid key'}, HTTPStatus.BAD_REQUEST
+    except sqlalchemy.exc.DataError:
+        return {'Invalid Key': {'rating':data['rating']}}, HTTPStatus.BAD_REQUEST
+    except werkzeug.exceptions.BadRequest:
+        return {'msg': "The request needs a JSON with the 'rating' field containing a number from 1 to 5"}, HTTPStatus.BAD_REQUEST
+    except InvalidRating:
+        return {'msg': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
