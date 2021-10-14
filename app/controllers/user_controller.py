@@ -13,9 +13,8 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_requir
 
 
 def create():
-    data = decode_json(request.json)
     try:
-        new_user = Users.create_user(data)
+        new_user = Users.create_user(request.json)
 
         session = current_app.db.session
 
@@ -32,7 +31,7 @@ def create():
             return {'msg': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
         
         if type(e.orig) == psycopg2.errors.UniqueViolation:
-            return {'msg': 'User already exists'}, HTTPStatus.BAD_REQUEST
+            return {'msg': 'Email already registered'}, HTTPStatus.BAD_REQUEST
 
     except UserErrors.InvalidUsernameError:
          return {'msg': 'Username already exists'}, HTTPStatus.BAD_REQUEST
@@ -61,7 +60,7 @@ def login():
 
         access_token = create_access_token(identity=found_user)
 
-        return {'access_token': access_token}, HTTPStatus.OK
+        return {'accessToken': access_token}, HTTPStatus.OK
 
     except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
         return {'msg': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
@@ -69,18 +68,17 @@ def login():
 
 @jwt_required()
 def update():
-    data = request.json
+    data = decode_json(request.json)
     try:
         found_user = get_jwt_identity()
         data.pop('password')
         UserModel.query.filter_by(id=found_user['id']).update(data)
         
-        session = current_app.db.session
-        session.commit() 
+        current_app.db.session.commit() 
 
         output = UserModel.query.get(found_user['id'])
 
-        return jsonify(output), HTTPStatus.OK
+        return encode_json(output), HTTPStatus.OK
     except sqlalchemy.exc.InvalidRequestError as e:
         return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
 
@@ -138,7 +136,7 @@ def delete(id: int):
         return e.message, HTTPStatus.UNAUTHORIZED
 
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'User not found'}, HTTPStatus.BAD_REQUEST
+        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -147,14 +145,16 @@ def promote():
     try:
         Users.verify_admin()
 
+        UserModel.query.filter_by(email=data['email']).one()
         UserModel.query.filter_by(email=data['email']).update({'permission': 'mod'})
 
-        session = current_app.db.session
-        session.commit() 
+        current_app.db.session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
+    except sqlalchemy.exc.NoResultFound:
+        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -163,14 +163,16 @@ def demote():
     try:
         Users.verify_admin()
 
+        UserModel.query.filter_by(email=data['email']).one()
         UserModel.query.filter_by(email=data['email']).update({'permission': 'user'})
 
-        session = current_app.db.session
-        session.commit() 
+        current_app.db.session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
+    except sqlalchemy.exc.NoResultFound:
+        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
