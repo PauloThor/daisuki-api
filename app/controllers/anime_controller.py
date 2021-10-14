@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from flask import request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import and_
@@ -12,9 +13,11 @@ from app.services import user_service as Users
 from app.exc.user_error import InvalidPermissionError
 from app.exc import InvalidImageError
 from app.exc import user_error as UserErrors
+from functools import reduce
 import werkzeug
 import sqlalchemy
 import psycopg2
+import re
 
 
 @jwt_required()
@@ -153,12 +156,26 @@ def create_or_update_rating(id: int):
 def get_anime_by_name(anime_name: str):
     try:
         anime_name = anime_name.replace('-',' ')
+       
+        print(anime_name)
         if "dublado" in anime_name.lower():
             anime_name = anime_name.replace('dublado', '(dublado)')
            
         anime = AnimeModel.query.filter(func.lower(AnimeModel.name)==func.lower(anime_name)).first_or_404()
+    
+        # print(anime)
+        ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
+        
+        if ratings:
+            ratings = [r.rating for r in ratings]
+            rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+            anime = asdict(anime)
+            anime['rating'] = round(rating, 2)
+        else:
+            anime = asdict(anime)
+            anime['rating'] = None
        
-        return jsonify(anime), HTTPStatus.OK
+        return anime, HTTPStatus.OK
     except werkzeug.exceptions.NotFound:
         return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
