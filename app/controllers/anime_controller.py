@@ -52,6 +52,9 @@ def update(id: int):
         return jsonify(output), HTTPStatus.OK
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
+    except sqlalchemy.exc.InvalidRequestError as e:
+        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+
 
 
 @jwt_required()
