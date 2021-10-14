@@ -9,9 +9,9 @@ from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
 from app.services import anime_service as Animes
 from app.services import user_service as Users
-from app.services.helpers import decode_json, encode_json
+from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
-from flask import current_app, jsonify, request
+from flask import current_app, request
 from flask_jwt_extended import jwt_required
 
 
@@ -25,16 +25,16 @@ def create():
         session.commit()
         genres = form_data['genres'].split(',')
         anime = Animes.set_anime_genres(genres, new_anime, session)
-        return jsonify(anime), HTTPStatus.CREATED
+        return encode_json(anime), HTTPStatus.CREATED
     except InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except InvalidImageError as e:
         return e.message, HTTPStatus.BAD_REQUEST
     except werkzeug.exceptions.BadRequestKeyError as e:
-        return {'message': 'Invalid or missing key name. Required options: name, synopsis, image, total_episodes, is_movie, is_dubbed, genres.'}, HTTPStatus.BAD_REQUEST
+        return {'msg': 'Invalid or missing key name. Required options: name, synopsis, image, totalEpisodes, isMovie, isDubbed, genres.'}, HTTPStatus.BAD_REQUEST
     except sqlalchemy.exc.IntegrityError as e:
         if type(e.orig) == psycopg2.errors.UniqueViolation:
-            return {'message': 'Anime already registered!'}, HTTPStatus.CONFLICT
+            return {'msg': 'Anime already registered!'}, HTTPStatus.CONFLICT
 
 
 @jwt_required()
@@ -42,16 +42,17 @@ def update(id: int):
     try:
         Users.verify_admin()
 
-        data = request.json
+        data = decode_json(request.json)
 
         AnimeModel.query.filter_by(id=id).update(data)
 
-        session = current_app.db.session
-        session.commit()
+        current_app.db.session.commit()
 
-        output = AnimeModel.query.get(id)
+        anime = AnimeModel.query.get(id)
+        if not anime:
+            return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
-        return jsonify(output), HTTPStatus.OK
+        return encode_json(anime), HTTPStatus.OK
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except sqlalchemy.exc.InvalidRequestError as e:
@@ -64,20 +65,25 @@ def update_avatar(id: int):
     try:
         Users.verify_admin()
 
+        AnimeModel.query.filter_by(id=id).one()
+
         image_url  = upload_image(request.files['image'])
         
         AnimeModel.query.filter_by(id=id).update({'image_url': image_url})
 
-        session = current_app.db.session
-        session.commit()
+        current_app.db.session.commit()
 
-        return {"image_url": image_url}, HTTPStatus.OK
+        return {'imageUrl': image_url}, HTTPStatus.OK
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
+    except werkzeug.exceptions.BadRequestKeyError as e:
+        return {'msg': 'Missing form field image.'}, HTTPStatus.BAD_REQUEST
+    except sqlalchemy.exc.NoResultFound:
+        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
 
 def get_animes():
-    return jsonify(AnimeModel.query.all())
+    return encode_list_json(AnimeModel.query.all())
 
 
 @jwt_required()
@@ -87,16 +93,12 @@ def delete(id: int):
 
         anime_to_delete: AnimeModel = AnimeModel.query.get(id)
 
+        if not anime_to_delete:
+            return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+
         session = current_app.db.session
         session.delete(anime_to_delete)
         session.commit()
-
-        return {"msg": "Anime deleted"}, HTTPStatus.OK        
+        return {'msg': 'Anime deleted'}, HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
-
-    except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'Anime not found'}, HTTPStatus.BAD_REQUEST
-
-
-
