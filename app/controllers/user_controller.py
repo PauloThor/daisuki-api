@@ -117,7 +117,7 @@ def delete_self():
     session.delete(user_to_delete)
     session.commit()
 
-    return {"msg": "User deleted"}, HTTPStatus.OK
+    return {'msg': 'User deleted'}, HTTPStatus.OK
 
 
 @jwt_required()
@@ -131,7 +131,7 @@ def delete(id: int):
         session.delete(user_to_delete)
         session.commit()
 
-        return {"msg": "User deleted"}, HTTPStatus.OK        
+        return {'msg': 'User deleted'}, HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
@@ -181,7 +181,7 @@ def get_mods():
 
     output = [user for user in all_users if user.permission == 'mod']
 
-    return jsonify(output)
+    return encode_list_json(output)
 
 
 @jwt_required()
@@ -200,7 +200,7 @@ def post_favorite(anime_id: int):
         session = current_app.db.session
         session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidFavoriteError:
         return {'msg': f'User has already favorited {anime.name}'}, HTTPStatus.BAD_REQUEST
 
@@ -241,7 +241,7 @@ def delete_favorite(anime_id: int):
         session = current_app.db.session
         session.commit() 
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     except ValueError:
         return {'msg': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST
 
@@ -256,6 +256,5 @@ def update_avatar():
     session = current_app.db.session
     session.commit()
 
-    return {"avatar_url": image_url}, HTTPStatus.OK
-
-    
+    return {'avatarUrl': image_url}, HTTPStatus.OK
+ 
