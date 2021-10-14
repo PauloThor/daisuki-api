@@ -32,3 +32,4 @@ class AnimeModel(db.Model):
    created_at = Column(DateTime(timezone=True), nullable=False)
 
    genres = relationship('GenreAnimeModel')
+   episodes = db.relationship("EpisodeModel", backref="anime", cascade='all, delete')
