@@ -23,24 +23,24 @@ def create():
 
         return encode_json(new_user), HTTPStatus.CREATED
     except TypeError as e:
-        return {'msg': str(e)}, HTTPStatus.BAD_REQUEST
+        return {'message': str(e)}, HTTPStatus.BAD_REQUEST
 
     except sqlalchemy.exc.IntegrityError as e:
     
         if type(e.orig) == psycopg2.errors.NotNullViolation:
-            return {'msg': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
+            return {'message': str(e.orig).split('\n')[0]}, HTTPStatus.BAD_REQUEST
         
         if type(e.orig) == psycopg2.errors.UniqueViolation:
-            return {'msg': 'Email already registered'}, HTTPStatus.BAD_REQUEST
+            return {'message': 'Email already registered'}, HTTPStatus.BAD_REQUEST
 
     except UserErrors.InvalidUsernameError:
-         return {'msg': 'Username already exists'}, HTTPStatus.BAD_REQUEST
+         return {'message': 'Username already exists'}, HTTPStatus.BAD_REQUEST
 
 
 def get_user(id: int):      
     found_user = UserModel.query.get(id)
     if not found_user:
-        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
     return jsonify({
         'username': found_user.username,
         'avatarUrl': found_user.avatar_url
@@ -63,7 +63,7 @@ def login():
         return {'accessToken': access_token}, HTTPStatus.OK
 
     except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
-        return {'msg': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -80,7 +80,7 @@ def update():
 
         return encode_json(output), HTTPStatus.OK
     except sqlalchemy.exc.InvalidRequestError as e:
-        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+        return {'message': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -96,15 +96,15 @@ def update_password():
         session.add(found_user)
         session.commit()
 
-        return {'msg': 'Password updated'}, HTTPStatus.OK
+        return {'message': 'Password updated'}, HTTPStatus.OK
     except sqlalchemy.exc.InvalidRequestError as e:
-        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+        return {'message': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
     
     except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
-        return {'msg': 'Incorrect password'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Incorrect password'}, HTTPStatus.BAD_REQUEST
     
     except KeyError as e:
-        return {'msg': f'{str(e.args[0])} is missing'}
+        return {'message': f'{str(e.args[0])} is missing'}
 
 
 @jwt_required()
@@ -117,7 +117,7 @@ def delete_self():
     session.delete(user_to_delete)
     session.commit()
 
-    return {'msg': 'User deleted'}, HTTPStatus.OK
+    return {'message': 'User deleted'}, HTTPStatus.OK
 
 
 @jwt_required()
@@ -131,12 +131,12 @@ def delete(id: int):
         session.delete(user_to_delete)
         session.commit()
 
-        return {'msg': 'User deleted'}, HTTPStatus.OK        
+        return {'message': 'User deleted'}, HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -154,7 +154,7 @@ def promote():
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -172,7 +172,7 @@ def demote():
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'User not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()
@@ -202,7 +202,7 @@ def post_favorite(anime_id: int):
 
         return '', HTTPStatus.NO_CONTENT
     except UserErrors.InvalidFavoriteError:
-        return {'msg': f'User has already favorited {anime.name}'}, HTTPStatus.BAD_REQUEST
+        return {'message': f'User has already favorited {anime.name}'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -224,7 +224,7 @@ def get_favorites():
 
         return jsonify(output), HTTPStatus.OK
     except ValueError:
-        return {'msg': 'Arguments should be integers'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Arguments should be integers'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -243,7 +243,7 @@ def delete_favorite(anime_id: int):
 
         return '', HTTPStatus.NO_CONTENT
     except ValueError:
-        return {'msg': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST
+        return {'message': f'The user did not favorite {anime.name}'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()

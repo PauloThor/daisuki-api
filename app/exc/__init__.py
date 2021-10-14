@@ -8,10 +8,10 @@ class InvalidImageError(Exception):
 class DuplicatedDataError(Exception):
     def __init__(self, data) -> None:
         self.message = {
-            "message": f"{data} already exists"
+            'message': f'{data} already exists.'
         }
 
 
 class PageNotFoundError(Exception):
     def __init__(self, data):
-        self.message = {"message": f'Page {data} not found'}
+        self.message = {'message': f'Page {data} not found.'}

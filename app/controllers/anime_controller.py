@@ -31,10 +31,10 @@ def create():
     except InvalidImageError as e:
         return e.message, HTTPStatus.BAD_REQUEST
     except werkzeug.exceptions.BadRequestKeyError as e:
-        return {'msg': 'Invalid or missing key name. Required options: name, synopsis, image, totalEpisodes, isMovie, isDubbed, genres.'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Invalid or missing key name. Required options: name, synopsis, image, totalEpisodes, isMovie, isDubbed, genres.'}, HTTPStatus.BAD_REQUEST
     except sqlalchemy.exc.IntegrityError as e:
         if type(e.orig) == psycopg2.errors.UniqueViolation:
-            return {'msg': 'Anime already registered!'}, HTTPStatus.CONFLICT
+            return {'message': 'Anime already registered!'}, HTTPStatus.CONFLICT
 
 
 @jwt_required()
@@ -50,13 +50,13 @@ def update(id: int):
 
         anime = AnimeModel.query.get(id)
         if not anime:
-            return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+            return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
         return encode_json(anime), HTTPStatus.OK
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except sqlalchemy.exc.InvalidRequestError as e:
-        return {'msg': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
+        return {'message': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
 
 
 
@@ -77,9 +77,9 @@ def update_avatar(id: int):
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
     except werkzeug.exceptions.BadRequestKeyError as e:
-        return {'msg': 'Missing form field image.'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Missing form field image.'}, HTTPStatus.BAD_REQUEST
     except sqlalchemy.exc.NoResultFound:
-        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
 
 def get_animes():
@@ -94,11 +94,11 @@ def delete(id: int):
         anime_to_delete: AnimeModel = AnimeModel.query.get(id)
 
         if not anime_to_delete:
-            return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+            return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
         session = current_app.db.session
         session.delete(anime_to_delete)
         session.commit()
-        return {'msg': 'Anime deleted'}, HTTPStatus.OK        
+        return {'message': 'Anime deleted'}, HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED

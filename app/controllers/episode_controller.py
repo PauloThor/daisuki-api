@@ -3,8 +3,8 @@ from http import HTTPStatus
 from app.exc import DuplicatedDataError, InvalidImageError
 from app.exc.user_error import InvalidPermissionError
 from app.services import episode_service as Episode
-from app.services.helpers import encode_json, encode_list_json, paginate
-from flask import current_app, jsonify, request
+from app.services.helpers import encode_json, paginate
+from flask import current_app, request
 from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -27,7 +27,7 @@ def create_episode():
     except DuplicatedDataError as e:
         return e.message, HTTPStatus.BAD_REQUEST
     except BadRequestKeyError:
-        return {'msg': 'Invalid or missing key name. Required options: anime, episodeNumber, image, videoUrl.'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Invalid or missing key name. Required options: anime, episodeNumber, image, videoUrl.'}, HTTPStatus.BAD_REQUEST
 
 def get_all_episodes():
     return paginate(Episode.list_episodes()), HTTPStatus.OK
