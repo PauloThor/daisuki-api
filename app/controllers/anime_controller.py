@@ -8,14 +8,16 @@ from app.exc import user_error as UserErrors
 from app.exc.anime_errors import InvalidRating
 from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
-from app.models.user_model import UserModel
 from app.models.anime_rating_model import AnimeRatingModel
+from app.models.episode_model import EpisodeModel
+from app.models.user_model import UserModel
 from app.services import anime_service as Animes
 from app.services import user_service as Users
 from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
-from flask import current_app, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import current_app, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from sqlalchemy import desc, func
 
 
 @jwt_required()
@@ -135,3 +137,16 @@ def set_rating(id: int):
         return {'Invalid Key': {'rating':data['rating']}}, HTTPStatus.BAD_REQUEST
     except InvalidRating:
         return {'message': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
+
+
+def get_most_popular():
+    rows = current_app.db.session.query(AnimeModel.name, func.avg(EpisodeModel.views).label('avg_views'))\
+            .join(EpisodeModel, EpisodeModel.anime_id == AnimeModel.id)\
+            .group_by(AnimeModel.name)\
+            .order_by(desc('avg_views'))\
+            .limit(10)\
+            .all()
+
+    data = [{'name': row[0], 'averageViews': int(row[1])} for row in rows]
+
+    return jsonify(data), HTTPStatus.OK
