@@ -12,9 +12,9 @@ def create_anime(files: ImmutableMultiDict, form: ImmutableMultiDict) -> AnimeMo
     image_url  = upload_image(files['image'])
 
     new_anime = AnimeModel(name=form['name'], synopsis=form['synopsis'])
-    new_anime.total_episodes = int(form['total_episodes'])
-    new_anime.is_movie = bool(form['is_movie'])
-    new_anime.is_dubbed = bool(form['is_dubbed'])
+    new_anime.total_episodes = int(form['totalEpisodes'])
+    new_anime.is_movie = bool(form['isMovie'])
+    new_anime.is_dubbed = bool(form['isDubbed'])
     new_anime.image_url = image_url
     new_anime.is_completed = False
     new_anime.created_at = datetime.utcnow()

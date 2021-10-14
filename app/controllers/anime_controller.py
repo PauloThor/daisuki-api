@@ -1,16 +1,18 @@
-from flask import request, current_app, jsonify
-from flask_jwt_extended import jwt_required
 from http import HTTPStatus
-from app.models.anime_model import AnimeModel
-from app.services import anime_service as Animes
-from app.services.imgur_service import upload_image
-from app.services import user_service as Users
-from app.exc.user_error import InvalidPermissionError
+
+import psycopg2
+import sqlalchemy
+import werkzeug
 from app.exc import InvalidImageError
 from app.exc import user_error as UserErrors
-import werkzeug
-import sqlalchemy
-import psycopg2
+from app.exc.user_error import InvalidPermissionError
+from app.models.anime_model import AnimeModel
+from app.services import anime_service as Animes
+from app.services import user_service as Users
+from app.services.helpers import decode_json, encode_json
+from app.services.imgur_service import upload_image
+from flask import current_app, jsonify, request
+from flask_jwt_extended import jwt_required
 
 
 @jwt_required()
