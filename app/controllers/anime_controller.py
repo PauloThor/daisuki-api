@@ -2,6 +2,7 @@ from flask import request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import and_
 from http import HTTPStatus
+from sqlalchemy.sql.functions import func
 from app.exc.anime_errors import InvalidRating
 from app.models.anime_model import AnimeModel
 from app.models.anime_rating_model import AnimeRatingModel
@@ -146,3 +147,19 @@ def create_or_update_rating(id: int):
         return {'msg': "The request needs a JSON with the 'rating' field containing a number from 1 to 5"}, HTTPStatus.BAD_REQUEST
     except InvalidRating:
         return {'msg': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
+
+
+
+def get_anime_by_name(anime_name: str):
+    try:
+        anime_name = anime_name.replace('-',' ')
+        if "dublado" in anime_name.lower():
+            anime_name = anime_name.replace('dublado', '(dublado)')
+           
+        anime = AnimeModel.query.filter(func.lower(AnimeModel.name)==func.lower(anime_name)).first_or_404()
+       
+        return jsonify(anime), HTTPStatus.OK
+    except werkzeug.exceptions.NotFound:
+        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+
+
