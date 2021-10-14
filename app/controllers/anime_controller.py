@@ -107,7 +107,7 @@ def delete(id: int):
 
 
 @jwt_required()
-def create_or_update_rating(id: int):
+def set_rating(id: int):
     try:
         data = request.json
 
