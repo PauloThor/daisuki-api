@@ -3,7 +3,7 @@ from http import HTTPStatus
 from app.exc import DuplicatedDataError, InvalidImageError
 from app.exc.user_error import InvalidPermissionError
 from app.services import episode_service as Episode
-from app.services.helpers import decode_json, encode_json, paginate
+from app.services.helpers import encode_json, encode_list_json, paginate
 from flask import current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import BadRequestKeyError

@@ -35,8 +35,8 @@ def paginate(data_list, per_page=12, page=1):
         if last_page == 0:
             return {
                 "page": page,
-                "previous_page": None,
-                "next_page": None,
+                "previous": None,
+                "next": None,
                 "data": []
             }
 
@@ -52,10 +52,12 @@ def paginate(data_list, per_page=12, page=1):
         if page > 1:
             previous_page = page - 1
         
+        data_list = [humps.camelize(asdict(data)) for data in data_list]
+        
         return {
             "page": page,
-            "previous_page": f'page={previous_page}&per_page={per_page}' if previous_page else previous_page,
-            "next_page": f'page={next_page}&per_page={per_page}' if next_page else next_page,
+            "previous": f'page={previous_page}&per_page={per_page}' if previous_page else previous_page,
+            "next": f'page={next_page}&per_page={per_page}' if next_page else next_page,
             "data": data_list[((page-1)*per_page):(page*per_page)]
         }
 
