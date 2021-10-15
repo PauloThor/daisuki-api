@@ -8,7 +8,7 @@ import re
 import psycopg2
 import sqlalchemy
 import werkzeug
-from app.exc import InvalidImageError
+from app.exc import InvalidImageError, PageNotFoundError
 from app.exc import user_error as UserErrors
 from app.exc.anime_errors import InvalidRating
 from app.exc.user_error import InvalidPermissionError
@@ -24,7 +24,7 @@ from functools import reduce
 import werkzeug
 import sqlalchemy
 import psycopg2
-from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
+from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -232,3 +232,34 @@ def get_anime_by_name(anime_name: str):
        return anime, HTTPStatus.OK
    except werkzeug.exceptions.NotFound:
        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+
+
+@jwt_required(optional=True)
+def get_anime_episodes(anime_name: str):
+    try:
+        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+        episodes = paginate(anime.episodes, 24)
+        current_user = get_jwt_identity()
+        
+        if current_user:
+            user = UserModel.query.filter_by(id=current_user['id']).first()
+            watched_episodes = [episode.id for episode in user.watched_episodes]
+            for episode in episodes['data']:
+                if episode['id'] in watched_episodes:
+                    episode['hasWatched'] = True
+                else:
+                    episode['hasWatched'] = False       
+            
+        return jsonify(episodes), HTTPStatus.OK
+    except werkzeug.exceptions.NotFound:
+       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except PageNotFoundError:
+        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except ZeroDivisionError:
+        return {'msg': 'Invalid url'}, HTTPStatus.BAD_REQUEST
+
+
+
+def teste():
+    return ''
