@@ -5,6 +5,7 @@ from app.exc.comment_error import CommentError
 from app.exc.user_error import InvalidPermissionError
 from app.models.comment_model import CommentModel
 from app.models.episode_model import EpisodeModel
+from app.models.watched_episode_model import WatchedEpisodeModel
 from app.services import episode_service as Episode
 from app.services.helpers import encode_json, decode_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
@@ -13,6 +14,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import desc, asc
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 from werkzeug.exceptions import BadRequestKeyError
+
+from datetime import datetime
 
 
 @jwt_required()

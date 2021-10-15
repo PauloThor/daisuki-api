@@ -10,7 +10,6 @@ from sqlalchemy import Column, String, Integer, Boolean, DateTime
 class AnimeModel(db.Model):
    id: int
    name: str
-   synopsis: str
    image_url: str
    total_episodes: int
    is_movie: bool
@@ -33,4 +32,4 @@ class AnimeModel(db.Model):
 
    genres = relationship('GenreModel', backref='animes', secondary='genres_animes')
    episodes = relationship('EpisodeModel', backref='anime', cascade='all, delete')
-   ratings = relationship('UserModel', backref='ratings', secondary='animes_ratings', cascade='all, delete')
+   ratings = relationship('UserModel', backref='ratings', secondary='animes_ratings')
