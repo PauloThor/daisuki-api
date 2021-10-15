@@ -1,2 +1,6 @@
 class InvalidRating(Exception):
     ...
+
+class GenreNotFoundError(Exception):
+    ...
+

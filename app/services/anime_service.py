@@ -1,6 +1,9 @@
 from datetime import datetime
-
+from dataclasses import asdict
+from functools import reduce
+from typing import Union
 from app.models.anime_model import AnimeModel
+from app.models.anime_rating_model import AnimeRatingModel
 from app.models.genre_model import GenreModel
 from app.services.helpers import verify_admin_mod
 from app.services.imgur_service import upload_image
@@ -35,3 +38,4 @@ def set_anime_genres(genres: list, anime: AnimeModel, session) -> AnimeModel:
     session.commit()
 
     return anime
+

@@ -10,18 +10,23 @@ import sqlalchemy
 import werkzeug
 from app.exc import InvalidImageError, PageNotFoundError
 from app.exc import user_error as UserErrors
-from app.exc.anime_errors import InvalidRating
+from app.exc.anime_errors import GenreNotFoundError, InvalidRating
 from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
 from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
+from app.models.genre_anime_model import GenreAnimeModel
+from app.models.genre_model import GenreModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
-from app.services.helpers import decode_json, encode_json, encode_list_json,paginate, verify_admin_mod
+from app.services import user_service as Users
+from app.services.helpers import (decode_json, encode_json, encode_list_json,
+                                  paginate, verify_admin_mod)
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from sqlalchemy import desc, func
+from sqlalchemy import and_, desc, func
+from sqlalchemy.sql.functions import func
 
 
 @jwt_required()
@@ -94,43 +99,96 @@ def update_avatar(id: int):
 
 def get_animes():
 
-    if 'starts_with' in request.args:
-        starts_with= request.args.get('starts_with')
+    try:
+        animes = AnimeModel.query
+        
 
-        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper())).all()
-        return encode_list_json(animes)
+        for k in request.args:
+            param = request.args.get(k)
 
-    return encode_list_json(AnimeModel.query.all())
+            if hasattr(AnimeModel, k):
+        
+                animes = animes.filter(getattr(AnimeModel,k)==param)
+            
+            if k == 'starts_with':
+                    animes = animes.filter(AnimeModel.name.startswith(param.upper()))
+        
+        animes_result = []
+        for anime in animes:
+                ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
+
+                if ratings:
+                    
+                    ratings = [r.rating for r in ratings]
+                    rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                    anime.rating = round(rating, 2)
+                
+                else:
+                    anime.rating = None
+
+                animes_result.append(anime)
+
+        
+        order_by = request.args.get('order_by')
+
+        if order_by and order_by.lower() =='rating':
+            animes_with_rating = [anime for anime in animes_result if anime.rating is not None]
+            animes_rating_sorted = sorted(animes_with_rating, reverse=True, key=lambda a: a.rating)
+            paged_animes= paginate(animes_rating_sorted, 24)
+            
+            return jsonify(paged_animes)
+        
+        
+        paged_animes= paginate(animes_result, 24)
+
+        return jsonify(paged_animes)
+
+    except sqlalchemy.exc.DataError as e:
+        return {'message' : 'Invalid query param value'}, HTTPStatus.BAD_REQUEST
 
 
-def get_completed():
+def get_by_genre(genre_name):
 
-    starts_with= request.args.get('starts_with')
-    if 'starts_with' in request.args:
+    try:
+      
+        genre_name = genre_name.title()
+        
+        if not GenreModel.query.filter_by(name=genre_name).first():
+            raise GenreNotFoundError
+        
+        genre = GenreModel.query.filter_by(name=genre_name).first()
+        animes_by_genre = GenreModel.query.get(genre.id)
+        animes = animes_by_genre.animes
 
-        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_completed==True).all()
-        return encode_list_json(animes)
+        anime_with_rating = []
+        for anime in animes:
+            ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
+            
 
-    animes = AnimeModel.query.filter_by(is_completed=True).all()
+            if ratings:
+                
+                ratings = [r.rating for r in ratings]
+                rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                anime.rating = round(rating, 2)
+            
+            else:
+                anime.rating = None
 
-    return encode_list_json(animes)
+            anime_with_rating.append(anime)
+        
+        paged_animes= paginate(anime_with_rating, 24)
+
+        return jsonify(paged_animes)
 
 
-def get_dubbed():
+    except GenreNotFoundError:
+        return {'message': 'The genre its not found'}, HTTPStatus.NOT_FOUND
 
-    if 'starts_with' in request.args:
-
-        starts_with= request.args.get('starts_with')
-        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_dubbed==True).all()
-        return encode_list_json(animes)
-
-    animes = AnimeModel.query.filter_by(is_dubbed=True).all()
-
-    return encode_list_json(animes)
 
 
 def get_latest_animes():
     animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
+
     return encode_list_json(animes)
 
 
