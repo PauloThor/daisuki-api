@@ -18,6 +18,7 @@ def create_anime(files: ImmutableMultiDict, form: ImmutableMultiDict) -> AnimeMo
     new_anime.image_url = image_url
     new_anime.is_completed = False
     new_anime.created_at = datetime.utcnow()
+    new_anime.updated_at = datetime.utcnow()
 
     return new_anime
 

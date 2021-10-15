@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from datetime import datetime
 from flask import request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from http import HTTPStatus
@@ -59,6 +60,7 @@ def update(id: int):
         verify_admin_mod()
 
         data = decode_json(request.json)
+        data.update({'updated_at': datetime.utcnow()})
 
         AnimeModel.query.filter_by(id=id).update(data)
 
@@ -85,7 +87,7 @@ def update_avatar(id: int):
 
         image_url  = upload_image(request.files['image'])
         
-        AnimeModel.query.filter_by(id=id).update({'image_url': image_url})
+        AnimeModel.query.filter_by(id=id).update({'image_url': image_url, 'updated_at': datetime.utcnow()})
 
         current_app.db.session.commit()
 
