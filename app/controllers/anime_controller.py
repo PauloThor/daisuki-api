@@ -1,11 +1,9 @@
+import re
 from dataclasses import asdict
 from datetime import datetime
-from flask import request, current_app, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from functools import reduce
 from http import HTTPStatus
-from sqlalchemy.sql.functions import func
-from http import HTTPStatus
-import re
+
 import psycopg2
 import sqlalchemy
 import werkzeug
@@ -18,18 +16,12 @@ from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
-from app.exc.user_error import InvalidPermissionError
-from app.exc import InvalidImageError
-from app.exc import user_error as UserErrors
-from functools import reduce
-import werkzeug
-import sqlalchemy
-import psycopg2
 from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import desc, func
+from sqlalchemy.sql.functions import func
 
 
 @jwt_required()
