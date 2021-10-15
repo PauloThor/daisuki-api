@@ -77,12 +77,10 @@ def update():
     data = decode_json(request.json)
     try:
         found_user = get_jwt_identity()
-        if 'password' in data:
-            data.pop('password')
-        if 'created_at' in data:
-            data.pop('created_at')
-        if 'permission' in data:
-            data.pop('permission')
+        
+        data.pop('password', None)
+        data.pop('created_at', None)        
+        data.pop('permission', None)
 
         UserModel.query.filter_by(id=found_user['id']).update(data)
         
