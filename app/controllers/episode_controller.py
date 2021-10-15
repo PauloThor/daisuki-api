@@ -60,6 +60,7 @@ def update_episode(id: int):
         verify_admin_mod()
 
         data = decode_json(request.json)
+        data.update({'updated_at': datetime.utcnow()})
 
         EpisodeModel.query.filter_by(id=id).update(data)
         current_app.db.session.commit()
@@ -82,7 +83,7 @@ def update_avatar_episode(id: int):
 
         image_url = upload_image(request.files['image'])
 
-        EpisodeModel.query.filter_by(id=id).update({'image_url': image_url})
+        EpisodeModel.query.filter_by(id=id).update({'image_url': image_url, 'updated_at': datetime.utcnow()})
         current_app.db.session.commit()
 
         return {'imageUrl': image_url}, HTTPStatus.OK
