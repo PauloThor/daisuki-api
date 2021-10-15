@@ -26,6 +26,7 @@ class UserModel(db.Model):
     permission = Column(String(30), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
     password_hash = Column(String(511), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
 
     favorites = relationship('AnimeModel', backref="favorites", secondary='users_favorites_animes', cascade='all, delete')
   
