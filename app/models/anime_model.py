@@ -16,6 +16,7 @@ class AnimeModel(db.Model):
    is_dubbed: bool
    is_completed: bool
    created_at: datetime
+   updated_at: datetime
  
    __tablename__ = 'animes'
  

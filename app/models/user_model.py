@@ -16,6 +16,7 @@ class UserModel(db.Model):
     avatar_url: str
     permission: str
     created_at: datetime
+    updated_at: datetime
 
     __tablename__ = 'users'
  
