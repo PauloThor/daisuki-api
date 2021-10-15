@@ -2,12 +2,13 @@ from http import HTTPStatus
 
 import psycopg2
 import sqlalchemy
-from app.exc import user_error as UserErrors
+from app.exc import PageNotFoundError, user_error as UserErrors
 from app.models.anime_model import AnimeModel
 from app.models.user_model import UserModel
 from app.services import user_service as Users
-from app.services.helpers import decode_json, encode_json, encode_list_json
+from app.services.helpers import decode_json, encode_json, encode_list_json, paginate
 from app.services.imgur_service import upload_image
+from app.services.helpers import paginate
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 
@@ -64,6 +65,8 @@ def login():
 
     except (sqlalchemy.exc.NoResultFound, UserErrors.InvalidPasswordError):
         return {'message': 'Incorrect email or password'}, HTTPStatus.BAD_REQUEST
+    except KeyError as e:
+        return {'message': f'{str(e)} is missing'}
 
 
 @jwt_required()
@@ -213,24 +216,17 @@ def post_favorite(anime_id: int):
 
 @jwt_required()
 def get_favorites():
-    args = request.args
     try:
-        page = 1 if 'page' not in args else int(args['page'])
-        size = 10 if 'size' not in args else int(args['size'])
-
         found_user = get_jwt_identity()
         query = UserModel.query.get(found_user['id'])
 
-        paginated = []
-        for index, item in enumerate(query.favorites):
-            if index >= (page-1) * size and index < page * size:
-                paginated.append(item)
-
-        output = [{'id': anime.id, 'name': anime.name} for anime in paginated]
+        output = paginate(query.favorites)
 
         return jsonify(output), HTTPStatus.OK
     except ValueError:
         return {'message': 'Arguments should be integers'}, HTTPStatus.BAD_REQUEST
+    except PageNotFoundError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
@@ -264,3 +260,17 @@ def update_avatar():
 
     return {'avatarUrl': image_url}, HTTPStatus.OK
  
+
+@jwt_required()
+def get_watched():
+    found_user = get_jwt_identity()
+    try:
+        user = UserModel.query.get(found_user['id'])
+
+        output = paginate(user.watched)
+
+        return jsonify(output)
+    except PageNotFoundError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
+
+
