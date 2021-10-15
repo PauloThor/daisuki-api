@@ -142,8 +142,8 @@ def watch_episode(id: int):
 
         session.add(watched)
 
-        return '', HTTPStatus.OK
+        return '', HTTPStatus.NO_CONTENT
     
     session.commit()
 
-    return '', HTTPStatus.OK
+    return '', HTTPStatus.NO_CONTENT
