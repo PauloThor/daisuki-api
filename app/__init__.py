@@ -15,7 +15,7 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = getenv('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=8)
     
-    if getenv['FLASK_ENV'] == 'production':
+    if getenv('FLASK_ENV') == 'production':
         app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL').replace('postgres', 'postgresql')    
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = getenv('SQLALCHEMY_DATABASE_URI')
