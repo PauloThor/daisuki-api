@@ -149,3 +149,14 @@ def get_most_popular():
     data = [{'name': row[0], 'imageUrl': row[1], 'averageViews': int(row[2])} for row in rows]
 
     return jsonify(data), HTTPStatus.OK
+
+
+def search():
+    try:
+        anime_name = request.json['anime']
+        
+        query = AnimeModel.query.filter(AnimeModel.name.ilike(f'{anime_name}%')).all()
+
+        return encode_list_json(query)    
+    except (TypeError, KeyError):
+        return {'message': 'There should be a prop named anime with a string value'}
