@@ -19,3 +19,5 @@ bp.get('/moderators')(Controller.get_mods)
 bp.put('/favorites/<int:anime_id>')(Controller.post_favorite)
 bp.get('/favorites')(Controller.get_favorites)
 bp.delete('/favorites/<int:anime_id>')(Controller.delete_favorite)
+
+bp.get('/watched_episodes')(Controller.get_watched)

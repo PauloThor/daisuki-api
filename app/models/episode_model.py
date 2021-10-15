@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from app.configs.database import db
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
 from datetime import datetime
 
@@ -24,3 +25,6 @@ class EpisodeModel(db.Model):
     video_url = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
     views = Column(Integer, default=0)
+
+    viewers = relationship('UserModel', backref="watched", secondary='watched_episodes')
+

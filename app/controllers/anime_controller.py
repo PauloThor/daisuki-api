@@ -14,8 +14,9 @@ from app.exc import user_error as UserErrors
 from app.exc.anime_errors import InvalidRating
 from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
-from app.models.user_model import UserModel
 from app.models.anime_rating_model import AnimeRatingModel
+from app.models.episode_model import EpisodeModel
+from app.models.user_model import UserModel
 from app.services import anime_service as Animes
 from app.services import user_service as Users
 from app.exc.user_error import InvalidPermissionError
@@ -26,9 +27,11 @@ import werkzeug
 import sqlalchemy
 import psycopg2
 from app.services.helpers import decode_json, encode_json, encode_list_json
+from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
 from app.services.imgur_service import upload_image
-from flask import current_app, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import current_app, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from sqlalchemy import desc, func
 
 
 @jwt_required()
@@ -56,7 +59,7 @@ def create():
 @jwt_required()
 def update(id: int):
     try:
-        Users.verify_admin()
+        verify_admin_mod()
 
         data = decode_json(request.json)
 
@@ -79,7 +82,7 @@ def update(id: int):
 @jwt_required()
 def update_avatar(id: int):
     try:
-        Users.verify_admin()
+        verify_admin_mod()
 
         AnimeModel.query.filter_by(id=id).one()
 
@@ -105,7 +108,7 @@ def get_animes():
 @jwt_required()
 def delete(id: int):
     try:
-        Users.verify_admin()
+        verify_admin_mod()
 
         anime_to_delete: AnimeModel = AnimeModel.query.get(id)
 
@@ -115,7 +118,7 @@ def delete(id: int):
         session = current_app.db.session
         session.delete(anime_to_delete)
         session.commit()
-        return {'message': 'Anime deleted'}, HTTPStatus.OK        
+        return encode_json(anime_to_delete), HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
@@ -138,7 +141,7 @@ def set_rating(id: int):
         if anime in user.ratings:
             AnimeRatingModel.query.filter(AnimeRatingModel.anime_id == anime.id, AnimeRatingModel.user_id == user.id).update(data)
             session.commit()
-            return '', HTTPStatus.OK
+            return '', HTTPStatus.NO_CONTENT
 
         rating = AnimeRatingModel(rating=data['rating'], user_id=user.id, anime_id=anime.id)
         session.add(rating)
@@ -147,38 +150,36 @@ def set_rating(id: int):
     except sqlalchemy.exc.DataError:
         return {'Invalid Key': {'rating':data['rating']}}, HTTPStatus.BAD_REQUEST
     except InvalidRating:
-        return {'msg': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
 
+
+def get_most_popular():
+    rows = current_app.db.session.query(AnimeModel.name, AnimeModel.image_url, func.avg(EpisodeModel.views).label('avg_views'))\
+            .join(EpisodeModel, EpisodeModel.anime_id == AnimeModel.id)\
+            .group_by(AnimeModel.name, AnimeModel.image_url)\
+            .order_by(desc('avg_views'))\
+            .limit(10)\
+            .all()
+
+    data = [{'name': row[0], 'imageUrl': row[1], 'averageViews': int(row[2])} for row in rows]
+
+    return jsonify(data), HTTPStatus.OK
 
 
 def get_anime_by_name(anime_name: str):
-    try:
-        # anime_name = anime_name.replace('-',' ')
-
-        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
-        print(anime_name)
-       
-        # if "dublado" in anime_name.lower():
-        #     anime_name = anime_name.replace('dublado', '(dublado)')
-           
-        ani2 = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%', escape=':')).first()
-        
-        # print(ani2)
-        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
-    
-        ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
-        
-        if ratings:
-            ratings = [r.rating for r in ratings]
-            rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-            anime = asdict(anime)
-            anime['rating'] = round(rating, 2)
-        else:
-            anime = asdict(anime)
-            anime['rating'] = None
-       
-        return anime, HTTPStatus.OK
-    except werkzeug.exceptions.NotFound:
-        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
-
-
+   try:
+       anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+       anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+       ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
+       anime = asdict(anime)
+ 
+       if ratings:
+           ratings = [r.rating for r in ratings]
+           rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+           anime['rating'] = round(rating, 2)
+       else:
+           anime['rating'] = None
+     
+       return anime, HTTPStatus.OK
+   except werkzeug.exceptions.NotFound:
+       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND

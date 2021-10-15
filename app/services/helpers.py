@@ -1,6 +1,5 @@
 from dataclasses import asdict
 from math import ceil
-
 import humps
 from app.exc import InvalidImageError, PageNotFoundError
 from app.exc.user_error import InvalidPermissionError
@@ -31,12 +30,14 @@ def paginate(data_list, per_page=12, page=1):
         per_page = int(request.args.get('per_page', per_page))
         page = int(request.args.get('page', page))
         last_page = ceil(len(data_list)/per_page)
+        total = len(data_list)
 
         if last_page == 0:
             return {
                 "page": page,
                 "previous": None,
                 "next": None,
+                "total": total,
                 "data": []
             }
 
@@ -58,6 +59,7 @@ def paginate(data_list, per_page=12, page=1):
             "page": page,
             "previous": f'page={previous_page}&per_page={per_page}' if previous_page else previous_page,
             "next": f'page={next_page}&per_page={per_page}' if next_page else next_page,
+            "total": total,
             "data": data_list[((page-1)*per_page):(page*per_page)]
         }
 
