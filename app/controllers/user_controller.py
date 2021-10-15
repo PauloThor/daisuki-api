@@ -50,10 +50,6 @@ def get_user(id: int):
     })
 
 
-@jwt_required()
-def get_users():
-    return encode_list_json(UserModel.query.all()), HTTPStatus.OK
-
 
 def login():
     data = request.json
