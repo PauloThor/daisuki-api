@@ -102,7 +102,46 @@ def update_avatar(id: int):
 
 
 def get_animes():
+
+    if 'starts_with' in request.args:
+        starts_with= request.args.get('starts_with')
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper())).all()
+        return encode_list_json(animes)
+
     return encode_list_json(AnimeModel.query.all())
+
+
+def get_completed():
+
+    starts_with= request.args.get('starts_with')
+    if 'starts_with' in request.args:
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_completed==True).all()
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_completed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_dubbed():
+
+    if 'starts_with' in request.args:
+
+        starts_with= request.args.get('starts_with')
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_dubbed==True).all()
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_dubbed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_latest_animes():
+    animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
+    return encode_list_json(animes)
+
 
 
 @jwt_required()
