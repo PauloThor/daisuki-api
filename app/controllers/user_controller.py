@@ -39,6 +39,7 @@ def create():
          return {'message': 'Username already exists'}, HTTPStatus.BAD_REQUEST
 
 
+
 def get_user(id: int):      
     found_user = UserModel.query.get(id)
     if not found_user:
