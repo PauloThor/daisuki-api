@@ -206,7 +206,7 @@ def search():
     try:
         anime_name = request.json['anime']
         
-        query = AnimeModel.query.filter(AnimeModel.name.ilike(f'{anime_name}%')).all()
+        query = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%')).all()
 
         return encode_list_json(query), HTTPStatus.OK    
     except (TypeError, KeyError):
