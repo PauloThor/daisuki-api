@@ -5,7 +5,6 @@ bp = Blueprint('users', __name__, url_prefix='/users')
 
 bp.post('')(Controller.create)
 bp.get('/<int:id>')(Controller.get_user)
-bp.get('')(Controller.get_users)
 bp.post('/login')(Controller.login)
 bp.patch('/update')(Controller.update)
 bp.patch('/update-password')(Controller.update_password)

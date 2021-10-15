@@ -1,10 +1,9 @@
-from dataclasses import asdict
-from flask import request, current_app, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from http import HTTPStatus
-from sqlalchemy.sql.functions import func
-from http import HTTPStatus
 import re
+from dataclasses import asdict
+from datetime import datetime
+from functools import reduce
+from http import HTTPStatus
+
 import psycopg2
 import sqlalchemy
 import werkzeug
@@ -17,13 +16,6 @@ from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
-from app.exc.user_error import InvalidPermissionError
-from app.exc import InvalidImageError
-from app.exc import user_error as UserErrors
-from functools import reduce
-import werkzeug
-import sqlalchemy
-import psycopg2
 from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
@@ -59,6 +51,7 @@ def update(id: int):
         verify_admin_mod()
 
         data = decode_json(request.json)
+        data.update({'updated_at': datetime.utcnow()})
 
         AnimeModel.query.filter_by(id=id).update(data)
 
@@ -85,7 +78,7 @@ def update_avatar(id: int):
 
         image_url  = upload_image(request.files['image'])
         
-        AnimeModel.query.filter_by(id=id).update({'image_url': image_url})
+        AnimeModel.query.filter_by(id=id).update({'image_url': image_url, 'updated_at': datetime.utcnow()})
 
         current_app.db.session.commit()
 
@@ -138,7 +131,6 @@ def get_dubbed():
 def get_latest_animes():
     animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
     return encode_list_json(animes)
-
 
 
 @jwt_required()
@@ -258,8 +250,3 @@ def get_anime_episodes(anime_name: str):
         return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except ZeroDivisionError:
         return {'msg': 'Invalid url'}, HTTPStatus.BAD_REQUEST
-
-
-
-def teste():
-    return ''

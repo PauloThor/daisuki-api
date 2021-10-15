@@ -26,6 +26,7 @@ def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session)
     new_episode.image_url = image_url
     new_episode.video_url = form['videoUrl']
     new_episode.created_at = datetime.utcnow()
+    new_episode.updated_at = datetime.utcnow()
 
     return new_episode
 
@@ -74,6 +75,7 @@ def create_comment_episode(user_id: int, episode_id: int, data: dict) -> Comment
     comment = CommentModel(user_id=user_id, episode_id=episode_id)
     comment.content = data['content'] 
     comment.created_at = datetime.utcnow()
+    comment.updated_at = datetime.utcnow()
 
     return comment
 
