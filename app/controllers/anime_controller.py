@@ -286,7 +286,7 @@ def get_anime_by_name(anime_name: str):
        else:
            anime['rating'] = None
 
-       return humps.camelize(anime), HTTPStatus.OK
+       return jsonify(humps.camelize(anime)), HTTPStatus.OK
    except werkzeug.exceptions.NotFound:
        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
@@ -327,10 +327,16 @@ def get_anime_episode_by_number(anime_name: str, episode_number: int):
     
         episode['anime'] = humps.camelize(asdict(anime))
          
-        return episode, HTTPStatus.OK
+        return jsonify(episode), HTTPStatus.OK
     except werkzeug.exceptions.NotFound:
        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except PageNotFoundError:
         return {'message': 'Episode not found'}, HTTPStatus.NOT_FOUND
     except ZeroDivisionError:
         return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
+
+
+def get_name_animes_incompleted():
+    animes = AnimeModel.query.filter(AnimeModel.is_completed==False).order_by(AnimeModel.name).all()
+    output = [anime.name for anime in animes]
+    return jsonify(output)
