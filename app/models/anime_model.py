@@ -5,6 +5,8 @@ from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
 
+from app.models.anime_rating_model import AnimeRatingModel
+import re
 
 @dataclass
 class AnimeModel(db.Model):

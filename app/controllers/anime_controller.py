@@ -1,5 +1,11 @@
+from dataclasses import asdict
+from flask import request, current_app, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import and_
 from http import HTTPStatus
-
+from sqlalchemy.sql.functions import func
+from http import HTTPStatus
+import re
 import psycopg2
 import sqlalchemy
 import werkzeug
@@ -12,6 +18,13 @@ from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
+from app.exc.user_error import InvalidPermissionError
+from app.exc import InvalidImageError
+from app.exc import user_error as UserErrors
+from functools import reduce
+import werkzeug
+import sqlalchemy
+import psycopg2
 from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
@@ -87,7 +100,46 @@ def update_avatar(id: int):
 
 
 def get_animes():
+
+    if 'starts_with' in request.args:
+        starts_with= request.args.get('starts_with')
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper())).all()
+        return encode_list_json(animes)
+
     return encode_list_json(AnimeModel.query.all())
+
+
+def get_completed():
+
+    starts_with= request.args.get('starts_with')
+    if 'starts_with' in request.args:
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_completed==True).all()
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_completed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_dubbed():
+
+    if 'starts_with' in request.args:
+
+        starts_with= request.args.get('starts_with')
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_dubbed==True).all()
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_dubbed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_latest_animes():
+    animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
+    return encode_list_json(animes)
+
 
 
 @jwt_required()
@@ -157,6 +209,27 @@ def search():
         
         query = AnimeModel.query.filter(AnimeModel.name.ilike(f'{anime_name}%')).all()
 
-        return encode_list_json(query)    
+        return encode_list_json(query), HTTPStatus.OK    
     except (TypeError, KeyError):
         return {'message': 'There should be a prop named anime with a string value'}
+
+
+def get_anime_by_name(anime_name: str):
+   try:
+       anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+       anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+       ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
+       synopsis = anime.synopsis
+       anime = asdict(anime)
+       anime['synopsis'] = synopsis
+ 
+       if ratings:
+           ratings = [r.rating for r in ratings]
+           rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+           anime['rating'] = round(rating, 2)
+       else:
+           anime['rating'] = None
+
+       return anime, HTTPStatus.OK
+   except werkzeug.exceptions.NotFound:
+       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
