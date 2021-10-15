@@ -3,13 +3,16 @@ from http import HTTPStatus
 from app.exc import DuplicatedDataError, InvalidImageError, PageNotFoundError, DataNotFound
 from app.exc.user_error import InvalidPermissionError
 from app.models.episode_model import EpisodeModel
+from app.models.watched_episode_model import WatchedEpisodeModel
 from app.services import episode_service as Episode
 from app.services.helpers import encode_json, decode_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import InvalidRequestError
 from werkzeug.exceptions import BadRequestKeyError
+
+from datetime import datetime
 
 
 @jwt_required()
@@ -124,3 +127,23 @@ def get_comment():
 @jwt_required()
 def delete_comment():
     ...
+
+@jwt_required(optional=True)
+def watch_episode(id: int):
+    found_user = get_jwt_identity()
+    episode = EpisodeModel.query.get(id)
+
+    episode.views += 1
+    today = datetime.utcnow()
+    session = current_app.db.session
+
+    if found_user:
+        watched = WatchedEpisodeModel(user_id=found_user['id'], episode_id=id, watched_at=today)
+
+        session.add(watched)
+
+        return '', HTTPStatus.NO_CONTENT
+    
+    session.commit()
+
+    return '', HTTPStatus.NO_CONTENT

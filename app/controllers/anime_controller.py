@@ -103,7 +103,7 @@ def delete(id: int):
         session = current_app.db.session
         session.delete(anime_to_delete)
         session.commit()
-        return {'message': 'Anime deleted'}, HTTPStatus.OK        
+        return encode_json(anime_to_delete), HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
@@ -126,7 +126,7 @@ def set_rating(id: int):
         if anime in user.ratings:
             AnimeRatingModel.query.filter(AnimeRatingModel.anime_id == anime.id, AnimeRatingModel.user_id == user.id).update(data)
             session.commit()
-            return '', HTTPStatus.OK
+            return '', HTTPStatus.NO_CONTENT
 
         rating = AnimeRatingModel(rating=data['rating'], user_id=user.id, anime_id=anime.id)
         session.add(rating)
