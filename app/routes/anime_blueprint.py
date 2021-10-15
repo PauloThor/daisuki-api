@@ -11,3 +11,5 @@ bp.delete('/<int:id>')(Controller.delete)
 bp.get('/<anime_name>')(Controller.get_anime_by_name)
 bp.put('/<int:id>/ratings')(Controller.set_rating)
 bp.get('/most-popular')(Controller.get_most_popular)
+bp.get('/<anime_name>/episodes')(Controller.get_anime_episodes)
+

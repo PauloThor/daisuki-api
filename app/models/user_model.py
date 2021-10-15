@@ -28,6 +28,7 @@ class UserModel(db.Model):
     password_hash = Column(String(511), nullable=False)
 
     favorites = relationship('AnimeModel', backref="favorites", secondary='users_favorites_animes', cascade='all, delete')
+    watched_episodes = relationship('EpisodeModel', backref='episodes', secondary='watched_episodes')
   
     @property
     def password(self):
