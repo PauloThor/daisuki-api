@@ -1,3 +1,4 @@
+import datetime
 from http import HTTPStatus
 
 import psycopg2
@@ -9,7 +10,8 @@ from app.services import user_service as Users
 from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from flask_jwt_extended import (create_access_token, get_jwt_identity,
+                                jwt_required)
 
 
 def create():
@@ -58,7 +60,9 @@ def login():
         found_user: UserModel = UserModel.query.filter_by(email=data['email']).one()
         found_user.verify_password(data['password'])
 
-        access_token = create_access_token(identity=found_user)
+        expires_delta = datetime.timedelta(days=30) if data.get('remindMe') else None
+
+        access_token = create_access_token(identity=found_user, expires_delta=expires_delta)
 
         return {'accessToken': access_token}, HTTPStatus.OK
 
