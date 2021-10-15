@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+
+from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
@@ -11,6 +13,7 @@ class CommentModel(db.Model):
     content: str
     created_at: datetime
     updated_at: datetime
+    user: str
 
     __tablename__ = 'comments'
 
@@ -20,3 +23,5 @@ class CommentModel(db.Model):
     content = Column(String(511), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=False)
+
+    user = relationship('UserModel')
