@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import reduce
 from http import HTTPStatus
 
+import humps
 import psycopg2
 import sqlalchemy
 import werkzeug
@@ -16,7 +17,7 @@ from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
-from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, verify_admin_mod
+from app.services.helpers import decode_json, encode_json, encode_list_json,paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -221,9 +222,9 @@ def get_anime_by_name(anime_name: str):
        else:
            anime['rating'] = None
 
-       return anime, HTTPStatus.OK
+       return humps.camelize(anime), HTTPStatus.OK
    except werkzeug.exceptions.NotFound:
-       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required(optional=True)
@@ -245,8 +246,27 @@ def get_anime_episodes(anime_name: str):
             
         return jsonify(episodes), HTTPStatus.OK
     except werkzeug.exceptions.NotFound:
-       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except PageNotFoundError:
-        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except ZeroDivisionError:
-        return {'msg': 'Invalid url'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
+
+
+def get_episode_by_number_and_anime_name(anime_name: str, episode_number: int):
+    try:
+        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+        # all_episodes = anime.episodes.
+        episodes = paginate(anime.episodes, 1)
+    
+        
+         
+            
+        return jsonify(episodes), HTTPStatus.OK
+    except werkzeug.exceptions.NotFound:
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except PageNotFoundError:
+        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except ZeroDivisionError:
+        return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
