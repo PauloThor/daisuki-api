@@ -1,7 +1,4 @@
 from http import HTTPStatus
-from typing import Optional
-
-from flask_jwt_extended.utils import get_jwt_header
 
 from app.exc import DuplicatedDataError, InvalidImageError, PageNotFoundError, DataNotFound
 from app.exc.user_error import InvalidPermissionError
