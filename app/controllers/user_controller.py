@@ -10,8 +10,7 @@ from app.services import user_service as Users
 from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
-from flask_jwt_extended import (create_access_token, get_jwt_identity,
-                                jwt_required)
+from flask_jwt_extended import create_access_token, get_jwt_identity,jwt_required
 
 
 def create():
