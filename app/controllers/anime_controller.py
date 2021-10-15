@@ -171,7 +171,9 @@ def get_anime_by_name(anime_name: str):
        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
        ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
+       synopsis = anime.synopsis
        anime = asdict(anime)
+       anime['synopsis'] = synopsis
  
        if ratings:
            ratings = [r.rating for r in ratings]
@@ -179,7 +181,7 @@ def get_anime_by_name(anime_name: str):
            anime['rating'] = round(rating, 2)
        else:
            anime['rating'] = None
-     
+
        return anime, HTTPStatus.OK
    except werkzeug.exceptions.NotFound:
        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
