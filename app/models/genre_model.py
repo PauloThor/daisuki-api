@@ -6,6 +6,7 @@ from sqlalchemy import Column, String, Integer
 
 @dataclass
 class GenreModel(db.Model):
+    id : int
     name: str
 
     __tablename__ = 'genres'
