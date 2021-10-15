@@ -1,6 +1,9 @@
-from flask import Flask
+import datetime
 from os import getenv
-from app.configs import database, migration, jwt, cors, commands
+
+from flask import Flask
+
+from app.configs import commands, cors, database, jwt, migration
 from app.routes import api_blueprint
 
 
@@ -11,6 +14,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JSON_SORT_KEYS'] = False
     app.config['JWT_SECRET_KEY'] = getenv('JWT_SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=8)
 
     cors.init_app(app)
     database.init_app(app)
