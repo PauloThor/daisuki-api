@@ -10,7 +10,6 @@ from sqlalchemy import Column, String, Integer, Boolean, DateTime
 class AnimeModel(db.Model):
    id: int
    name: str
-   synopsis: str
    image_url: str
    total_episodes: int
    is_movie: bool
