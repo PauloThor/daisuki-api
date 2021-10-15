@@ -232,3 +232,7 @@ def get_anime_by_name(anime_name: str):
        return anime, HTTPStatus.OK
    except werkzeug.exceptions.NotFound:
        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+
+
+def teste():
+    return ''
