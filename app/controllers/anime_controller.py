@@ -100,7 +100,7 @@ def update_avatar(id: int):
 def get_animes():
 
     animes = AnimeModel.query
-
+    
 
     for k in request.args:
         param = request.args.get(k)
@@ -115,27 +115,32 @@ def get_animes():
     animes_result = []
     for anime in animes:
             ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
-            anime = asdict(anime)
 
             if ratings:
                 
                 ratings = [r.rating for r in ratings]
                 rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-                anime['rating'] = round(rating, 2)
+                anime.rating = round(rating, 2)
             
             else:
-                anime['rating'] = None
+                anime.rating = None
 
             animes_result.append(anime)
+
     
     order_by = request.args.get('order_by')
 
     if order_by and order_by.lower() =='rating':
-        animes_with_rating = [anime for anime in animes_result if anime['rating'] is not None]
-        animes_rating_sorted = sorted(animes_with_rating, reverse=True, key=lambda a: a['rating'])
-        return jsonify(animes_rating_sorted)
+        animes_with_rating = [anime for anime in animes_result if anime.rating is not None]
+        animes_rating_sorted = sorted(animes_with_rating, reverse=True, key=lambda a: a.rating)
+        paged_animes= paginate(animes_rating_sorted, 24)
+        
+        return jsonify(paged_animes)
+       
+    
+    paged_animes= paginate(animes_result, 24)
 
-    return jsonify(animes_result)
+    return jsonify(paged_animes)
 
 
 def get_by_genre(genre_name):
@@ -152,20 +157,22 @@ def get_by_genre(genre_name):
         anime_with_rating = []
         for anime in animes:
             ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
-            anime = asdict(anime)
+            
 
             if ratings:
                 
                 ratings = [r.rating for r in ratings]
                 rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-                anime['rating'] = round(rating, 2)
+                anime.rating = round(rating, 2)
             
             else:
-                anime['rating'] = None
+                anime.rating = None
 
             anime_with_rating.append(anime)
-    
-        return jsonify(anime_with_rating)
+        
+        paged_animes= paginate(anime_with_rating, 24)
+
+        return jsonify(paged_animes)
 
 
     except GenreNotFoundError:
@@ -175,6 +182,7 @@ def get_by_genre(genre_name):
 
 def get_latest_animes():
     animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
+
     return encode_list_json(animes)
 
 
