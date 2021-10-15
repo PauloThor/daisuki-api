@@ -14,7 +14,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session) -> EpisodeModel:
     verify_admin_mod()
 
-    anime = check_anime_completed(form['anime'], form['episodeNumber'], session)
+    anime = check_anime_completed(form['anime'], int(form['episodeNumber']), session)
    
     if verify_episode_exists(int(form['episodeNumber']), anime.id):
         raise DuplicatedDataError('Episode')
@@ -38,7 +38,7 @@ def check_anime_completed(anime_name: str, episode_number: int, session) -> None
 
     if anime.total_episodes == episode_number:
 
-        setattr(anime, 'is_completed', True)
+        anime.is_completed = True
 
         session.add(anime)
         session.commit()
