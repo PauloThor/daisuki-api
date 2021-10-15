@@ -1,4 +1,4 @@
-import datetime
+from datetime import timedelta, datetime
 from http import HTTPStatus
 
 import psycopg2
@@ -39,6 +39,7 @@ def create():
          return {'message': 'Username already exists'}, HTTPStatus.BAD_REQUEST
 
 
+
 def get_user(id: int):      
     found_user = UserModel.query.get(id)
     if not found_user:
@@ -49,10 +50,6 @@ def get_user(id: int):
     })
 
 
-@jwt_required()
-def get_users():
-    return encode_list_json(UserModel.query.all()), HTTPStatus.OK
-
 
 def login():
     data = request.json
@@ -60,7 +57,7 @@ def login():
         found_user: UserModel = UserModel.query.filter_by(email=data['email']).one()
         found_user.verify_password(data['password'])
 
-        expires_delta = datetime.timedelta(days=30) if data.get('remindMe') else None
+        expires_delta = timedelta(days=30) if data.get('remindMe') else None
 
         access_token = create_access_token(identity=found_user, expires_delta=expires_delta)
 
@@ -81,6 +78,7 @@ def update():
         data.pop('password', None)
         data.pop('created_at', None)        
         data.pop('permission', None)
+        data.update({'updated_at': datetime.utcnow()})
 
         UserModel.query.filter_by(id=found_user['id']).update(data)
         
@@ -100,6 +98,7 @@ def update_password():
         found_user = UserModel.query.get(get_jwt_identity()['id'])
         found_user.verify_password(data['password'])
         found_user.password = data['newPassword']
+        found_user.updated_at = datetime.utcnow()
 
         session = current_app.db.session
 
@@ -156,7 +155,7 @@ def promote():
         Users.verify_admin()
 
         UserModel.query.filter_by(email=data['email']).one()
-        UserModel.query.filter_by(email=data['email']).update({'permission': 'mod'})
+        UserModel.query.filter_by(email=data['email']).update({'permission': 'mod', 'updated_at': datetime.utcnow()})
 
         current_app.db.session.commit() 
 
@@ -174,7 +173,7 @@ def demote():
         Users.verify_admin()
 
         UserModel.query.filter_by(email=data['email']).one()
-        UserModel.query.filter_by(email=data['email']).update({'permission': 'user'})
+        UserModel.query.filter_by(email=data['email']).update({'permission': 'user', 'updated_at': datetime.utcnow()})
 
         current_app.db.session.commit() 
 
@@ -254,7 +253,7 @@ def update_avatar():
     found_user = get_jwt_identity()
     image_url  = upload_image(request.files['image'])
     
-    UserModel.query.filter_by(id=found_user['id']).update({'avatar_url': image_url})
+    UserModel.query.filter_by(id=found_user['id']).update({'avatar_url': image_url, 'updated_at': datetime.utcnow()})
 
     session = current_app.db.session
     session.commit()
@@ -273,5 +272,4 @@ def get_watched():
         return jsonify(output)
     except PageNotFoundError as e:
         return e.message, HTTPStatus.BAD_REQUEST
-
 

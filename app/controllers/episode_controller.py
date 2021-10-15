@@ -60,6 +60,7 @@ def update_episode(id: int):
         verify_admin_mod()
 
         data = decode_json(request.json)
+        data.update({'updated_at': datetime.utcnow()})
 
         EpisodeModel.query.filter_by(id=id).update(data)
         current_app.db.session.commit()
@@ -82,7 +83,7 @@ def update_avatar_episode(id: int):
 
         image_url = upload_image(request.files['image'])
 
-        EpisodeModel.query.filter_by(id=id).update({'image_url': image_url})
+        EpisodeModel.query.filter_by(id=id).update({'image_url': image_url, 'updated_at': datetime.utcnow()})
         current_app.db.session.commit()
 
         return {'imageUrl': image_url}, HTTPStatus.OK
@@ -117,22 +118,23 @@ def delete_episode(id: int):
 @jwt_required(optional=True)
 def watch_episode(id: int):
     found_user = get_jwt_identity()
-    episode = EpisodeModel.query.get(id)
+    try:
+        episode = EpisodeModel.query.get(id)
 
-    episode.views += 1
-    today = datetime.utcnow()
-    session = current_app.db.session
+        episode.views += 1
+        today = datetime.utcnow()
+        session = current_app.db.session
 
-    if found_user:
-        watched = WatchedEpisodeModel(user_id=found_user['id'], episode_id=id, watched_at=today)
+        if found_user:
+            watched = WatchedEpisodeModel(user_id=found_user['id'], episode_id=id, watched_at=today)
 
-        session.add(watched)
+            session.add(watched)
+        
+        session.commit()
 
         return '', HTTPStatus.NO_CONTENT
-    
-    session.commit()
-
-    return '', HTTPStatus.NO_CONTENT
+    except AttributeError:
+        return {'msg': 'Episode not found'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()

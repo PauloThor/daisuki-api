@@ -21,6 +21,7 @@ def create_user(data):
     new_user.permission = 'user'
     new_user.email = email.lower()
     new_user.created_at = datetime.utcnow()
+    new_user.updated_at = datetime.utcnow()
 
     return new_user
 

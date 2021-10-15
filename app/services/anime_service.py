@@ -1,6 +1,9 @@
 from datetime import datetime
-
+from dataclasses import asdict
+from functools import reduce
+from typing import Union
 from app.models.anime_model import AnimeModel
+from app.models.anime_rating_model import AnimeRatingModel
 from app.models.genre_model import GenreModel
 from app.services.helpers import verify_admin_mod
 from app.services.imgur_service import upload_image
@@ -18,6 +21,7 @@ def create_anime(files: ImmutableMultiDict, form: ImmutableMultiDict) -> AnimeMo
     new_anime.image_url = image_url
     new_anime.is_completed = False
     new_anime.created_at = datetime.utcnow()
+    new_anime.updated_at = datetime.utcnow()
 
     return new_anime
 
@@ -34,3 +38,4 @@ def set_anime_genres(genres: list, anime: AnimeModel, session) -> AnimeModel:
     session.commit()
 
     return anime
+

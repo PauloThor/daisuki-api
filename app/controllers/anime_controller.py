@@ -1,14 +1,13 @@
-import re
 from dataclasses import asdict
+from datetime import datetime
 from functools import reduce
 from http import HTTPStatus
-
 import psycopg2
 import sqlalchemy
 import werkzeug
-from app.exc import InvalidImageError
+from app.exc import InvalidImageError, PageNotFoundError
 from app.exc import user_error as UserErrors
-from app.exc.anime_errors import InvalidRating
+from app.exc.anime_errors import GenreNotFoundError, InvalidRating
 from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
 from app.models.anime_rating_model import AnimeRatingModel
@@ -18,14 +17,12 @@ from app.models.genre_model import GenreModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
 from app.services import user_service as Users
-from app.services.helpers import (decode_json, encode_json, encode_list_json,
-                                  verify_admin_mod)
+from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import and_, desc, func
 from sqlalchemy.sql.functions import func
-from app.services.helpers import paginate
 
 
 @jwt_required()
@@ -56,6 +53,7 @@ def update(id: int):
         verify_admin_mod()
 
         data = decode_json(request.json)
+        data.update({'updated_at': datetime.utcnow()})
 
         AnimeModel.query.filter_by(id=id).update(data)
 
@@ -82,7 +80,7 @@ def update_avatar(id: int):
 
         image_url  = upload_image(request.files['image'])
         
-        AnimeModel.query.filter_by(id=id).update({'image_url': image_url})
+        AnimeModel.query.filter_by(id=id).update({'image_url': image_url, 'updated_at': datetime.utcnow()})
 
         current_app.db.session.commit()
 
@@ -108,24 +106,64 @@ def get_animes():
         
         if k == 'starts_with':
                 animes = animes.filter(AnimeModel.name.startswith(param.upper()))
+    
+    anime_with_rating = []
+    for anime in animes:
+            ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
+            anime = asdict(anime)
+
+            if ratings:
+                
+                ratings = [r.rating for r in ratings]
+                rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                anime['rating'] = round(rating, 2)
+            
+            else:
+                anime['rating'] = None
+
+            anime_with_rating.append(anime)
+    
+    return jsonify(anime_with_rating)
+
+
+
+def get_by_genre(genre_name):
+
+    try:
+
+        if not GenreModel.query.filter_by(name=genre_name).first():
+            raise GenreNotFoundError
         
+        genre = GenreModel.query.filter_by(name=genre_name).first()
+        animes_by_genre = GenreModel.query.get(genre.id)
+        animes = animes_by_genre.animes
 
-    return encode_list_json(animes)
+        anime_with_rating = []
+        for anime in animes:
+            ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
+            anime = asdict(anime)
+
+            if ratings:
+                
+                ratings = [r.rating for r in ratings]
+                rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                anime['rating'] = round(rating, 2)
+            
+            else:
+                anime['rating'] = None
+
+            anime_with_rating.append(anime)
+    
+        return jsonify(anime_with_rating)
 
 
-def get_by_genre(genre):
-
-    genre = GenreModel.query.filter_by(name=genre).first()
-    animes_by_genre = GenreModel.query.get(genre.id)
-    animes = animes_by_genre.animes
-
-    return encode_list_json(animes)
+    except GenreNotFoundError as e:
+        return {'message': 'The genre its not found'}, HTTPStatus.NOT_FOUND
 
 
 def get_latest_animes():
     animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
     return encode_list_json(animes)
-
 
 
 @jwt_required()
@@ -189,23 +227,64 @@ def get_most_popular():
     return jsonify(data), HTTPStatus.OK
 
 
+def search():
+    try:
+        anime_name = request.json['anime']
+        
+        query = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%')).all()
+
+        return encode_list_json(query), HTTPStatus.OK    
+    except (TypeError, KeyError):
+        return {'message': 'There should be a prop named anime with a string value'}
+
+
 def get_anime_by_name(anime_name: str):
    try:
-       anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
-       anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
-       ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
-       synopsis = anime.synopsis
-       anime = asdict(anime)
-       anime['synopsis'] = synopsis
- 
-       if ratings:
-           ratings = [r.rating for r in ratings]
-           rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-           anime['rating'] = round(rating, 2)
-       else:
-           anime['rating'] = None
+    anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+    anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
 
-       return anime, HTTPStatus.OK
+    synopsis = anime.synopsis
+    anime = asdict(anime)
+    anime['synopsis'] = synopsis
+
+    ratings = AnimeRatingModel.query.filter_by(anime_id=anime['id']).all()        
+
+    if ratings:
+        
+        ratings = [r.rating for r in ratings]
+        rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+        anime['rating'] = round(rating, 2)
+
+    else:
+        anime['rating'] = None
+
+    return anime, HTTPStatus.OK
+
    except werkzeug.exceptions.NotFound:
        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
+
+@jwt_required(optional=True)
+def get_anime_episodes(anime_name: str):
+    try:
+        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+        episodes = paginate(anime.episodes, 24)
+        current_user = get_jwt_identity()
+        
+        if current_user:
+            user = UserModel.query.filter_by(id=current_user['id']).first()
+            watched_episodes = [episode.id for episode in user.watched_episodes]
+            for episode in episodes['data']:
+                if episode['id'] in watched_episodes:
+                    episode['hasWatched'] = True
+                else:
+                    episode['hasWatched'] = False       
+            
+        return jsonify(episodes), HTTPStatus.OK
+    except werkzeug.exceptions.NotFound:
+       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except PageNotFoundError:
+        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except ZeroDivisionError:
+        return {'msg': 'Invalid url'}, HTTPStatus.BAD_REQUEST

@@ -13,8 +13,9 @@ class EpisodeModel(db.Model):
     episode_number: int
     image_url: str
     video_url: str
-    created_at: datetime
     views: int
+    created_at: datetime
+    updated_at: datetime
 
     __tablename__ = 'episodes'
 
@@ -23,8 +24,9 @@ class EpisodeModel(db.Model):
     episode_number = Column(Integer, nullable=False)
     image_url = Column(String(255), nullable=False)
     video_url = Column(String(255), nullable=False)
-    created_at = Column(DateTime(timezone=True), nullable=False)
     views = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
 
-    viewers = relationship('UserModel', backref="watched", secondary='watched_episodes')
+    viewers = relationship('UserModel', backref='watched', secondary='watched_episodes')
 
