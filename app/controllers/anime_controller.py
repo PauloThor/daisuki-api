@@ -15,6 +15,7 @@ from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.imgur_service import upload_image
 from flask import current_app, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.sql.expression import ColumnOperators
 
 
 
@@ -43,7 +44,7 @@ def create():
 @jwt_required()
 def update(id: int):
     try:
-        # Users.verify_admin()
+        Users.verify_admin()
 
         data = decode_json(request.json)
 
@@ -66,7 +67,7 @@ def update(id: int):
 @jwt_required()
 def update_avatar(id: int):
     try:
-        # Users.verify_admin()
+        Users.verify_admin()
 
         AnimeModel.query.filter_by(id=id).one()
 
@@ -86,11 +87,33 @@ def update_avatar(id: int):
 
 
 def get_animes():
-    
-    
-
     return encode_list_json(AnimeModel.query.all())
-    
+
+
+def get_completed():
+
+    starts_with= request.args.get('starts_with')
+    if 'starts_with' in request.args:
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_completed==True)
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_completed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_dubbed():
+
+    if 'starts_with' in request.args:
+
+        starts_with= request.args.get('starts_with')
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_dubbed==True)
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_dubbed=True).all()
+
+    return encode_list_json(animes)
 
 
 def get_latest_animes():
@@ -99,11 +122,10 @@ def get_latest_animes():
 
 
 
-
 @jwt_required()
 def delete(id: int):
     try:
-        # Users.verify_admin()
+        Users.verify_admin()
 
         anime_to_delete: AnimeModel = AnimeModel.query.get(id)
 
