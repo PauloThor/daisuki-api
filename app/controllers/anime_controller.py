@@ -1,7 +1,6 @@
 from dataclasses import asdict
 from flask import request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import and_
 from http import HTTPStatus
 from sqlalchemy.sql.functions import func
 from http import HTTPStatus
