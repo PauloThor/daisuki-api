@@ -1,3 +1,4 @@
+import re
 from dataclasses import asdict
 from datetime import datetime
 from functools import reduce
@@ -97,6 +98,7 @@ def get_animes():
 
     animes = AnimeModel.query
 
+
     for k in request.args:
         param = request.args.get(k)
 
@@ -107,7 +109,7 @@ def get_animes():
         if k == 'starts_with':
                 animes = animes.filter(AnimeModel.name.startswith(param.upper()))
     
-    anime_with_rating = []
+    animes_result = []
     for anime in animes:
             ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
             anime = asdict(anime)
@@ -121,10 +123,16 @@ def get_animes():
             else:
                 anime['rating'] = None
 
-            anime_with_rating.append(anime)
+            animes_result.append(anime)
     
-    return jsonify(anime_with_rating)
+    order_by = request.args.get('order_by')
 
+    if order_by and order_by.lower() =='rating':
+        animes_with_rating = [anime for anime in animes_result if anime['rating'] is not None]
+        animes_rating_sorted = sorted(animes_with_rating, reverse=True, key=lambda a: a['rating'])
+        return jsonify(animes_rating_sorted)
+
+    return jsonify(animes_result)
 
 
 def get_by_genre(genre_name):
@@ -157,8 +165,9 @@ def get_by_genre(genre_name):
         return jsonify(anime_with_rating)
 
 
-    except GenreNotFoundError as e:
+    except GenreNotFoundError:
         return {'message': 'The genre its not found'}, HTTPStatus.NOT_FOUND
+
 
 
 def get_latest_animes():
