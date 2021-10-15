@@ -117,22 +117,23 @@ def delete_episode(id: int):
 @jwt_required(optional=True)
 def watch_episode(id: int):
     found_user = get_jwt_identity()
-    episode = EpisodeModel.query.get(id)
+    try:
+        episode = EpisodeModel.query.get(id)
 
-    episode.views += 1
-    today = datetime.utcnow()
-    session = current_app.db.session
+        episode.views += 1
+        today = datetime.utcnow()
+        session = current_app.db.session
 
-    if found_user:
-        watched = WatchedEpisodeModel(user_id=found_user['id'], episode_id=id, watched_at=today)
+        if found_user:
+            watched = WatchedEpisodeModel(user_id=found_user['id'], episode_id=id, watched_at=today)
 
-        session.add(watched)
+            session.add(watched)
+        
+        session.commit()
 
         return '', HTTPStatus.NO_CONTENT
-    
-    session.commit()
-
-    return '', HTTPStatus.NO_CONTENT
+    except AttributeError:
+        return {'msg': 'Episode not found'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()

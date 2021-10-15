@@ -24,8 +24,7 @@ from functools import reduce
 import werkzeug
 import sqlalchemy
 import psycopg2
-from app.services.helpers import decode_json, encode_json, encode_list_json, paginate
-from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
+from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -100,7 +99,46 @@ def update_avatar(id: int):
 
 
 def get_animes():
+
+    if 'starts_with' in request.args:
+        starts_with= request.args.get('starts_with')
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper())).all()
+        return encode_list_json(animes)
+
     return encode_list_json(AnimeModel.query.all())
+
+
+def get_completed():
+
+    starts_with= request.args.get('starts_with')
+    if 'starts_with' in request.args:
+
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_completed==True).all()
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_completed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_dubbed():
+
+    if 'starts_with' in request.args:
+
+        starts_with= request.args.get('starts_with')
+        animes = AnimeModel.query.filter(AnimeModel.name.startswith(starts_with.upper()), AnimeModel.is_dubbed==True).all()
+        return encode_list_json(animes)
+
+    animes = AnimeModel.query.filter_by(is_dubbed=True).all()
+
+    return encode_list_json(animes)
+
+
+def get_latest_animes():
+    animes = AnimeModel.query.order_by(sqlalchemy.desc(AnimeModel.created_at)).limit(10)
+    return encode_list_json(animes)
+
 
 
 @jwt_required()
@@ -164,6 +202,17 @@ def get_most_popular():
     return jsonify(data), HTTPStatus.OK
 
 
+def search():
+    try:
+        anime_name = request.json['anime']
+        
+        query = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%')).all()
+
+        return encode_list_json(query), HTTPStatus.OK    
+    except (TypeError, KeyError):
+        return {'message': 'There should be a prop named anime with a string value'}
+
+
 def get_anime_by_name(anime_name: str):
    try:
        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
@@ -212,3 +261,5 @@ def get_anime_episodes(anime_name: str):
 
 
 
+def teste():
+    return ''
