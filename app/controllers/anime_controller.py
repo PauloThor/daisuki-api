@@ -1,7 +1,6 @@
 from dataclasses import asdict
 from flask import request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import and_
 from http import HTTPStatus
 from sqlalchemy.sql.functions import func
 from http import HTTPStatus
@@ -18,7 +17,6 @@ from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
-from app.services import user_service as Users
 from app.exc.user_error import InvalidPermissionError
 from app.exc import InvalidImageError
 from app.exc import user_error as UserErrors
@@ -26,7 +24,6 @@ from functools import reduce
 import werkzeug
 import sqlalchemy
 import psycopg2
-from app.services.helpers import decode_json, encode_json, encode_list_json
 from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
@@ -203,6 +200,17 @@ def get_most_popular():
     data = [{'name': row[0], 'imageUrl': row[1], 'averageViews': int(row[2])} for row in rows]
 
     return jsonify(data), HTTPStatus.OK
+
+
+def search():
+    try:
+        anime_name = request.json['anime']
+        
+        query = AnimeModel.query.filter(AnimeModel.name.ilike(f'{anime_name}%')).all()
+
+        return encode_list_json(query), HTTPStatus.OK    
+    except (TypeError, KeyError):
+        return {'message': 'There should be a prop named anime with a string value'}
 
 
 def get_anime_by_name(anime_name: str):
