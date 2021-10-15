@@ -1,5 +1,8 @@
-from app.models.episode_model import EpisodeModel
+from app.exc.comment_error import CommentError
+from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
+from app.models.comment_model import CommentModel
+from app.models.episode_model import EpisodeModel
 from app.services.helpers import verify_admin_mod
 from app.services.imgur_service import upload_image
 from app.exc import DataNotFound, DuplicatedDataError
@@ -62,11 +65,25 @@ def get_episode_by_id(id: int) -> EpisodeModel:
     return episode
 
 
-def update_episode(id, data, session):
-    verify_admin_mod()
+def create_comment_episode(user_id: int, episode_id: int, data: dict) -> CommentModel:
 
-    EpisodeModel.query.filter_by(id=id).update(data)
+    if len(data['content']) == 0:
+        raise CommentError()
 
-    session.commit()
+    comment = CommentModel(user_id=user_id, episode_id=episode_id)
+    comment.content = data['content'] 
+    comment.created_at = datetime.utcnow()
 
-    return get_episode_by_id(id)
+    return comment
+
+
+def delete_comment_episode(user, comment, session):
+    if not comment:
+        raise DataNotFound('Comment')
+
+    if user['permission'] == 'admin' or user['permission'] == 'mod' or user['id'] == comment.user_id:
+
+        session.delete(comment)
+        session.commit()
+    else:
+        raise InvalidPermissionError
