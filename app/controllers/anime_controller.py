@@ -253,20 +253,20 @@ def get_anime_episodes(anime_name: str):
         return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
 
 
-def get_episode_by_number_and_anime_name(anime_name: str, episode_number: int):
+def get_anime_episode_by_number(anime_name: str, episode_number: int):
     try:
         anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
         anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
-        # all_episodes = anime.episodes.
-        episodes = paginate(anime.episodes, 1)
+        all_episodes = sorted(anime.episodes, key=lambda x: x.episode_number)
+
+        episode = paginate(all_episodes, 1, episode_number)
     
-        
+        episode['anime'] = humps.camelize(asdict(anime))
          
-            
-        return jsonify(episodes), HTTPStatus.OK
+        return episode, HTTPStatus.OK
     except werkzeug.exceptions.NotFound:
        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except PageNotFoundError:
-        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'Episode not found'}, HTTPStatus.NOT_FOUND
     except ZeroDivisionError:
         return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
