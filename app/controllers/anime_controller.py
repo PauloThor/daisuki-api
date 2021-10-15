@@ -103,7 +103,7 @@ def delete(id: int):
         session = current_app.db.session
         session.delete(anime_to_delete)
         session.commit()
-        return {'message': 'Anime deleted'}, HTTPStatus.OK        
+        return encode_json(anime_to_delete), HTTPStatus.OK        
     except UserErrors.InvalidPermissionError as e:
         return e.message, HTTPStatus.UNAUTHORIZED
 
