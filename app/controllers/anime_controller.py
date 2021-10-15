@@ -3,6 +3,8 @@ from dataclasses import asdict
 from datetime import datetime
 from functools import reduce
 from http import HTTPStatus
+
+import humps
 import psycopg2
 import sqlalchemy
 import werkzeug
@@ -18,7 +20,8 @@ from app.models.genre_model import GenreModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
 from app.services import user_service as Users
-from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, verify_admin_mod
+from app.services.helpers import (decode_json, encode_json, encode_list_json,
+                                  paginate, verify_admin_mod)
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -249,28 +252,23 @@ def search():
 
 def get_anime_by_name(anime_name: str):
    try:
-    anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
-    anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+       anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+       anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+       ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
+       synopsis = anime.synopsis
+       anime = asdict(anime)
+       anime['synopsis'] = synopsis
+ 
+       if ratings:
+           ratings = [r.rating for r in ratings]
+           rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+           anime['rating'] = round(rating, 2)
+       else:
+           anime['rating'] = None
 
-    synopsis = anime.synopsis
-    anime = asdict(anime)
-    anime['synopsis'] = synopsis
-
-    ratings = AnimeRatingModel.query.filter_by(anime_id=anime['id']).all()        
-
-    if ratings:
-        
-        ratings = [r.rating for r in ratings]
-        rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-        anime['rating'] = round(rating, 2)
-
-    else:
-        anime['rating'] = None
-
-    return anime, HTTPStatus.OK
-
+       return humps.camelize(anime), HTTPStatus.OK
    except werkzeug.exceptions.NotFound:
-       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
 
 
 @jwt_required(optional=True)
@@ -292,8 +290,27 @@ def get_anime_episodes(anime_name: str):
             
         return jsonify(episodes), HTTPStatus.OK
     except werkzeug.exceptions.NotFound:
-       return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except PageNotFoundError:
-        return {'msg': 'Anime not found'}, HTTPStatus.NOT_FOUND
+        return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
     except ZeroDivisionError:
-        return {'msg': 'Invalid url'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
+
+
+def get_anime_episode_by_number(anime_name: str, episode_number: int):
+    try:
+        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+        all_episodes = sorted(anime.episodes, key=lambda x: x.episode_number)
+
+        episode = paginate(all_episodes, 1, episode_number)
+    
+        episode['anime'] = humps.camelize(asdict(anime))
+         
+        return episode, HTTPStatus.OK
+    except werkzeug.exceptions.NotFound:
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
+    except PageNotFoundError:
+        return {'message': 'Episode not found'}, HTTPStatus.NOT_FOUND
+    except ZeroDivisionError:
+        return {'message': 'Invalid url'}, HTTPStatus.BAD_REQUEST
