@@ -156,6 +156,8 @@ def delete(id: int):
 def set_rating(id: int):
     try:
         data = request.json
+        if len(data) > 1:
+            return {'message': 'The request body must contain only the ranting field'}, HTTPStatus.BAD_REQUEST
         if not data['rating'] in [1,2,3,4,5]:
             raise InvalidRating
 
@@ -180,6 +182,10 @@ def set_rating(id: int):
         return {'Invalid Key': {'rating':data['rating']}}, HTTPStatus.BAD_REQUEST
     except InvalidRating:
         return {'message': 'The rating must be from 1 to 5'}, HTTPStatus.BAD_REQUEST
+    except sqlalchemy.exc.InvalidRequestError:
+        return {'message': 'The request body must contain only the ranting field'}, HTTPStatus.BAD_REQUEST
+    except (KeyError):
+        return {'message': 'The requisition body must contain the rating field.'}, HTTPStatus.BAD_REQUEST
 
 
 def get_most_popular():
