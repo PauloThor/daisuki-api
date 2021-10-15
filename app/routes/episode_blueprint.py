@@ -10,4 +10,6 @@ bp.patch('/<int:id>')(Controller.update_episode)
 bp.patch('/update-avatar/<int:id>')(Controller.update_avatar_episode)
 bp.delete('/<int:id>')(Controller.delete_episode)
 bp.put('/views/<int:id>')(Controller.watch_episode)
-
+bp.post('/<int:id>/comments')(Controller.create_comment)
+bp.get('/<int:id>/comments')(Controller.get_comments)
+bp.delete('/<int:id>/comments/<int:comment_id>')(Controller.delete_comment)
