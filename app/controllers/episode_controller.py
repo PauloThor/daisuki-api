@@ -3,14 +3,16 @@ from typing import Optional
 
 from flask_jwt_extended.utils import get_jwt_header
 
-from app.exc import DuplicatedDataError, InvalidImageError
+from app.exc import DuplicatedDataError, InvalidImageError, PageNotFoundError, DataNotFound
 from app.exc.user_error import InvalidPermissionError
 from app.models.episode_model import EpisodeModel
 from app.models.watched_episode_model import WatchedEpisodeModel
 from app.services import episode_service as Episode
-from app.services.helpers import encode_json, paginate
+from app.services.helpers import encode_json, decode_json, paginate, verify_admin_mod
+from app.services.imgur_service import upload_image
 from flask import current_app, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.exc import InvalidRequestError
 from werkzeug.exceptions import BadRequestKeyError
 
 from datetime import datetime
@@ -33,15 +35,23 @@ def create_episode():
         return e.message, HTTPStatus.BAD_REQUEST
     except DuplicatedDataError as e:
         return e.message, HTTPStatus.BAD_REQUEST
+    except DataNotFound as e:
+        return e.message, HTTPStatus.NOT_FOUND
     except BadRequestKeyError:
         return {'message': 'Invalid or missing key name. Required options: anime, episodeNumber, image, videoUrl.'}, HTTPStatus.BAD_REQUEST
 
 def get_all_episodes():
-    return paginate(Episode.list_episodes()), HTTPStatus.OK
+    try:
+        return paginate(Episode.list_episodes()), HTTPStatus.OK
+    except PageNotFoundError as e:
+        return e.message, HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 def get_episode(id: int):
-    ...
+    try:
+        return encode_json(Episode.get_episode_by_id(id)), HTTPStatus.OK
+    except DataNotFound as e:
+        return e.message, HTTPStatus.NOT_FOUND
 
 
 def update_episode_preview():
@@ -49,13 +59,63 @@ def update_episode_preview():
 
 
 @jwt_required()
-def update_episode():
-    ...
+def update_episode(id: int):
+    try:
+        verify_admin_mod()
+
+        data = decode_json(request.json)
+
+        EpisodeModel.query.filter_by(id=id).update(data)
+        current_app.db.session.commit()
+
+        return encode_json(Episode.get_episode_by_id(id)), HTTPStatus.OK
+    except InvalidPermissionError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+    except DataNotFound as e:
+        return e.message, HTTPStatus.NOT_FOUND
+    except InvalidRequestError as e:
+        return {'message': e.args[0].split('\"')[-2] + ' is invalid'}, HTTPStatus.BAD_REQUEST
 
 
 @jwt_required()
-def delete_episode():
-    ...
+def update_avatar_episode(id: int):
+    try:
+        verify_admin_mod()
+
+        Episode.get_episode_by_id(id)
+
+        image_url = upload_image(request.files['image'])
+
+        EpisodeModel.query.filter_by(id=id).update({'image_url': image_url})
+        current_app.db.session.commit()
+
+        return {'imageUrl': image_url}, HTTPStatus.OK
+    except InvalidPermissionError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+    except DataNotFound as e:
+        return e.message, HTTPStatus.NOT_FOUND
+    except InvalidImageError as e:
+        return e.message, HTTPStatus.BAD_REQUEST
+    except BadRequestKeyError as e:
+        return {'message': 'Missing form field image.'}, HTTPStatus.BAD_REQUEST
+
+
+@jwt_required()
+def delete_episode(id: int):
+    try:
+        verify_admin_mod()
+
+        episode = Episode.get_episode_by_id(id)
+        session = current_app.db.session
+
+        session.delete(episode)
+        session.commit()
+
+        return encode_json(episode), HTTPStatus.OK
+    except InvalidPermissionError as e:
+        return e.message, HTTPStatus.UNAUTHORIZED
+    except DataNotFound as e:
+        return e.message, HTTPStatus.NOT_FOUND
 
 
 @jwt_required()

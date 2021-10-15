@@ -1,11 +1,11 @@
-from sqlalchemy.sql.sqltypes import Boolean
 from app.models.episode_model import EpisodeModel
 from app.models.anime_model import AnimeModel
 from app.services.helpers import verify_admin_mod
 from app.services.imgur_service import upload_image
-from app.exc import DuplicatedDataError
+from app.exc import DataNotFound, DuplicatedDataError
 from datetime import datetime
 from sqlalchemy import desc
+from sqlalchemy.sql.sqltypes import Boolean
 from werkzeug.datastructures import ImmutableMultiDict
 
 def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session) -> EpisodeModel:
@@ -29,7 +29,10 @@ def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session)
 
 
 def check_anime_completed(anime_name: str, episode_number: int, session) -> None:
-    anime = AnimeModel.query.filter_by(name=anime_name).one()
+    anime = AnimeModel.query.filter_by(name=anime_name).first()
+
+    if not anime:
+        raise DataNotFound(f'Anime {anime_name}')
 
     if anime.total_episodes == episode_number:
 
@@ -48,3 +51,22 @@ def verify_episode_exists(episode_number: int) -> Boolean:
         if episode.episode_number == episode_number:
             return True
     return False
+
+
+def get_episode_by_id(id: int) -> EpisodeModel:
+    episode = EpisodeModel.query.get(id).first()
+
+    if not episode:
+        raise DataNotFound('Episode')
+    
+    return episode
+
+
+def update_episode(id, data, session):
+    verify_admin_mod()
+
+    EpisodeModel.query.filter_by(id=id).update(data)
+
+    session.commit()
+
+    return get_episode_by_id(id)

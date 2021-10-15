@@ -12,8 +12,7 @@ from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
-from app.services import user_service as Users
-from app.services.helpers import decode_json, encode_json, encode_list_json
+from app.services.helpers import decode_json, encode_json, encode_list_json, verify_admin_mod
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -45,7 +44,7 @@ def create():
 @jwt_required()
 def update(id: int):
     try:
-        Users.verify_admin()
+        verify_admin_mod()
 
         data = decode_json(request.json)
 
@@ -68,7 +67,7 @@ def update(id: int):
 @jwt_required()
 def update_avatar(id: int):
     try:
-        Users.verify_admin()
+        verify_admin_mod()
 
         AnimeModel.query.filter_by(id=id).one()
 
@@ -94,7 +93,7 @@ def get_animes():
 @jwt_required()
 def delete(id: int):
     try:
-        Users.verify_admin()
+        verify_admin_mod()
 
         anime_to_delete: AnimeModel = AnimeModel.query.get(id)
 
@@ -140,13 +139,13 @@ def set_rating(id: int):
 
 
 def get_most_popular():
-    rows = current_app.db.session.query(AnimeModel.name, func.avg(EpisodeModel.views).label('avg_views'))\
+    rows = current_app.db.session.query(AnimeModel.name, AnimeModel.image_url, func.avg(EpisodeModel.views).label('avg_views'))\
             .join(EpisodeModel, EpisodeModel.anime_id == AnimeModel.id)\
-            .group_by(AnimeModel.name)\
+            .group_by(AnimeModel.name, AnimeModel.image_url)\
             .order_by(desc('avg_views'))\
             .limit(10)\
             .all()
 
-    data = [{'name': row[0], 'averageViews': int(row[1])} for row in rows]
+    data = [{'name': row[0], 'imageUrl': row[1], 'averageViews': int(row[2])} for row in rows]
 
     return jsonify(data), HTTPStatus.OK
