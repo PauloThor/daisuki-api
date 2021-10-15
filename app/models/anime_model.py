@@ -5,8 +5,6 @@ from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
 
-from app.models.anime_rating_model import AnimeRatingModel
-import re
 
 @dataclass
 class AnimeModel(db.Model):
@@ -31,6 +29,7 @@ class AnimeModel(db.Model):
    is_dubbed = Column(Boolean, nullable=False)
    is_completed = Column(Boolean, nullable=False)
    created_at = Column(DateTime(timezone=True), nullable=False)
+   updated_at = Column(DateTime(timezone=True), nullable=False)
 
    genres = relationship('GenreModel', backref='animes', secondary='genres_animes')
    episodes = relationship('EpisodeModel', backref='anime', cascade='all, delete')
