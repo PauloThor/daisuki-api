@@ -5,7 +5,7 @@ from sqlalchemy import and_
 from http import HTTPStatus
 from sqlalchemy.sql.functions import func
 from http import HTTPStatus
-
+import re
 import psycopg2
 import sqlalchemy
 import werkzeug
@@ -153,15 +153,19 @@ def set_rating(id: int):
 
 def get_anime_by_name(anime_name: str):
     try:
-        anime_name = anime_name.replace('-',' ')
-       
+        # anime_name = anime_name.replace('-',' ')
+
+        anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
         print(anime_name)
-        if "dublado" in anime_name.lower():
-            anime_name = anime_name.replace('dublado', '(dublado)')
+       
+        # if "dublado" in anime_name.lower():
+        #     anime_name = anime_name.replace('dublado', '(dublado)')
            
-        anime = AnimeModel.query.filter(func.lower(AnimeModel.name)==func.lower(anime_name)).first_or_404()
+        ani2 = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%', escape=':')).first()
+        
+        # print(ani2)
+        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
     
-        # print(anime)
         ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
         
         if ratings:
