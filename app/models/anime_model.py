@@ -5,12 +5,13 @@ from sqlalchemy.orm import relationship
 from app.configs.database import db
 from sqlalchemy import Column, String, Integer, Boolean, DateTime
 
+from app.models.anime_rating_model import AnimeRatingModel
+import re
 
 @dataclass
 class AnimeModel(db.Model):
    id: int
    name: str
-   synopsis: str
    image_url: str
    total_episodes: int
    is_movie: bool
@@ -33,3 +34,4 @@ class AnimeModel(db.Model):
 
    genres = relationship('GenreModel', backref='animes', secondary='genres_animes')
    episodes = relationship('EpisodeModel', backref='anime', cascade='all, delete')
+   ratings = relationship('UserModel', backref='ratings', secondary='animes_ratings')
