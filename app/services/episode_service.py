@@ -14,16 +14,15 @@ from werkzeug.datastructures import ImmutableMultiDict
 def upload_episode(files: ImmutableMultiDict, form: ImmutableMultiDict, session) -> EpisodeModel:
     verify_admin_mod()
 
-    image_url = upload_image(files['image'])
-    anime = AnimeModel.query.filter_by(name=form['anime']).first()
-
-    check_anime_completed(anime.name, form['episodeNumber'], session)
-
-    if verify_episode_exists(int(form['episodeNumber']), int(anime.id)):
+    anime = check_anime_completed(form['anime'], form['episodeNumber'], session)
+   
+    if verify_episode_exists(int(form['episodeNumber']), anime.id):
         raise DuplicatedDataError('Episode')
 
+    image_url = upload_image(files['image'])
+
     new_episode = EpisodeModel (episode_number=int(form['episodeNumber']))
-    new_episode.anime_id = int(anime.id)
+    new_episode.anime_id = anime.id
     new_episode.image_url = image_url
     new_episode.video_url = form['videoUrl']
     new_episode.created_at = datetime.utcnow()
@@ -43,6 +42,8 @@ def check_anime_completed(anime_name: str, episode_number: int, session) -> None
 
         session.add(anime)
         session.commit()
+    
+    return anime
 
 
 def list_episodes() -> list[EpisodeModel]:
