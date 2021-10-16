@@ -3,13 +3,14 @@ from http import HTTPStatus
 from app.exc import DuplicatedDataError, InvalidImageError, PageNotFoundError, DataNotFound
 from app.exc.comment_error import CommentError
 from app.exc.user_error import InvalidPermissionError
+from app.models.anime_model import AnimeModel
 from app.models.comment_model import CommentModel
 from app.models.episode_model import EpisodeModel
 from app.models.watched_episode_model import WatchedEpisodeModel
 from app.services import episode_service as Episode
 from app.services.helpers import encode_json, decode_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
-from flask import current_app, request
+from flask import current_app, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import desc, asc
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
@@ -42,7 +43,12 @@ def create_episode():
 
 def get_all_episodes():
     try:
-        return paginate(Episode.list_episodes()), HTTPStatus.OK
+        episodes = paginate(Episode.list_episodes())
+        for episode in episodes['data']:
+            anime = AnimeModel.query.get(episode['animeId'])
+            episode.pop('animeId')
+            episode['animeName'] = anime.name
+        return jsonify(episodes), HTTPStatus.OK
     except PageNotFoundError as e:
         return e.message, HTTPStatus.UNPROCESSABLE_ENTITY
 

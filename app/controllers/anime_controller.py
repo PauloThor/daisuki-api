@@ -98,59 +98,47 @@ def update_avatar(id: int):
 
 
 def get_animes():
-
     try:
         animes = AnimeModel.query
         
-
         for k in request.args:
             param = request.args.get(k)
 
             if hasattr(AnimeModel, k):
-        
                 animes = animes.filter(getattr(AnimeModel,k)==param)
-            
             if k == 'starts_with':
                     animes = animes.filter(AnimeModel.name.startswith(param.upper()))
         
-        animes_result = []
-        for anime in animes:
-                ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
+        animes = paginate(animes.all(), 24)
 
-                if ratings:
-                    
+        for anime in animes['data']:
+            ratings = AnimeRatingModel.query.filter_by(anime_id=anime['id']).all()        
+
+            if ratings:
                     ratings = [r.rating for r in ratings]
                     rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-                    anime.rating = round(rating, 2)
-                
-                else:
-                    anime.rating = None
+                    anime['rating'] = round(rating, 2) 
+            else:
+                    anime['rating'] = None
 
-                animes_result.append(anime)
-
-        
         order_by = request.args.get('order_by')
 
         if order_by and order_by.lower() =='rating':
-            animes_with_rating = [anime for anime in animes_result if anime.rating is not None]
-            animes_rating_sorted = sorted(animes_with_rating, reverse=True, key=lambda a: a.rating)
-            paged_animes= paginate(animes_rating_sorted, 24)
-            
-            return jsonify(paged_animes)
-        
-        
-        paged_animes= paginate(animes_result, 24)
-
-        return jsonify(paged_animes)
-
+            animes_rating_sorted = sorted(animes['data'], reverse=True, key=lambda a: a['rating'] if a['rating'] else 0)
+            return jsonify({    
+                'page': animes['page'],
+                'previous': animes['previous'],
+                'next': animes['next'],
+                'total': animes['total'],
+                'data': animes_rating_sorted
+                })
+        return jsonify(animes)
     except sqlalchemy.exc.DataError as e:
         return {'message' : 'Invalid query param value'}, HTTPStatus.BAD_REQUEST
 
 
 def get_by_genre(genre_name):
-
     try:
-      
         genre_name = genre_name.title()
         
         if not GenreModel.query.filter_by(name=genre_name).first():
@@ -160,30 +148,25 @@ def get_by_genre(genre_name):
         animes_by_genre = GenreModel.query.get(genre.id)
         animes = animes_by_genre.animes
 
-        anime_with_rating = []
-        for anime in animes:
-            ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
-            
+        starts_with = request.args.get('starts_with')
+
+        if starts_with:
+            animes = [anime for anime in animes if anime.name.startswith(starts_with.upper())]
+
+        animes = paginate(animes, 24)
+
+        for anime in animes['data']:
+            ratings = AnimeRatingModel.query.filter_by(anime_id=anime['id']).all()        
 
             if ratings:
-                
-                ratings = [r.rating for r in ratings]
-                rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-                anime.rating = round(rating, 2)
-            
+                    ratings = [r.rating for r in ratings]
+                    rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                    anime['rating'] = round(rating, 2) 
             else:
-                anime.rating = None
-
-            anime_with_rating.append(anime)
-        
-        paged_animes= paginate(anime_with_rating, 24)
-
-        return jsonify(paged_animes)
-
-
+                    anime['rating'] = None
+        return jsonify(animes)
     except GenreNotFoundError:
         return {'message': 'The genre its not found'}, HTTPStatus.NOT_FOUND
-
 
 
 def get_latest_animes():
