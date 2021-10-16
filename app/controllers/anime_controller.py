@@ -8,7 +8,8 @@ import humps
 import psycopg2
 import sqlalchemy
 import werkzeug
-from app.exc import InvalidImageError, PageNotFoundError
+from unidecode import unidecode
+from app.exc import InvalidImageError, PageNotFoundError, DataNotFound
 from app.exc import user_error as UserErrors
 from app.exc.anime_errors import GenreNotFoundError, InvalidRating
 from app.exc.user_error import InvalidPermissionError
@@ -144,11 +145,19 @@ def get_genres():
 def get_by_genre(genre_name):
     try:
         genre_name = genre_name.title()
+
+        genres = GenreModel.query.all()
+
+        genre = None
         
-        if not GenreModel.query.filter_by(name=genre_name).first():
-            raise GenreNotFoundError
+        for data in genres:
+            if unidecode(data.name) == unidecode(genre_name):
+                genre = data
+                break
+                
+        if not genre:
+            raise DataNotFound('Genre')
         
-        genre = GenreModel.query.filter_by(name=genre_name).first()
         animes_by_genre = GenreModel.query.get(genre.id)
         animes = animes_by_genre.animes
 
@@ -169,8 +178,8 @@ def get_by_genre(genre_name):
             else:
                     anime['rating'] = None
         return jsonify(animes)
-    except GenreNotFoundError:
-        return {'message': 'The genre its not found'}, HTTPStatus.NOT_FOUND
+    except DataNotFound as e:
+        return e.message, HTTPStatus.NOT_FOUND
 
 
 def get_latest_animes():
