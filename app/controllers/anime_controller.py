@@ -137,6 +137,10 @@ def get_animes():
         return {'message' : 'Invalid query param value'}, HTTPStatus.BAD_REQUEST
 
 
+def get_genres():
+    return jsonify(GenreModel.query.all()), HTTPStatus.OK
+
+
 def get_by_genre(genre_name):
     try:
         genre_name = genre_name.title()

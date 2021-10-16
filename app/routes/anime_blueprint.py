@@ -5,6 +5,7 @@ bp = Blueprint('animes', __name__, url_prefix='/animes')
 
 bp.post('')(Controller.create)
 bp.get('')(Controller.get_animes)
+bp.get('/genres')(Controller.get_genres)
 bp.get('/genres/<string:genre_name>')(Controller.get_by_genre)
 bp.get('/latest')(Controller.get_latest_animes)
 bp.patch('/<int:id>')(Controller.update)
