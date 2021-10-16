@@ -105,9 +105,7 @@ def get_animes():
             param = request.args.get(k)
 
             if hasattr(AnimeModel, k):
-        
                 animes = animes.filter(getattr(AnimeModel,k)==param)
-            
             if k == 'starts_with':
                     animes = animes.filter(AnimeModel.name.startswith(param.upper()))
         
@@ -119,11 +117,10 @@ def get_animes():
             if ratings:
                     ratings = [r.rating for r in ratings]
                     rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-                    anime['rating'] = round(rating, 2)
-                
+                    anime['rating'] = round(rating, 2) 
             else:
                     anime['rating'] = None
-        
+
         order_by = request.args.get('order_by')
 
         if order_by and order_by.lower() =='rating':
@@ -141,9 +138,7 @@ def get_animes():
 
 
 def get_by_genre(genre_name):
-
     try:
-      
         genre_name = genre_name.title()
         
         if not GenreModel.query.filter_by(name=genre_name).first():
@@ -153,29 +148,25 @@ def get_by_genre(genre_name):
         animes_by_genre = GenreModel.query.get(genre.id)
         animes = animes_by_genre.animes
 
-        anime_with_rating = []
-        for anime in animes:
-            ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()        
-            
+        starts_with = request.args.get('starts_with')
+
+        if starts_with:
+            animes = [anime for anime in animes if anime.name.startswith(starts_with.upper())]
+
+        animes = paginate(animes, 24)
+
+        for anime in animes['data']:
+            ratings = AnimeRatingModel.query.filter_by(anime_id=anime['id']).all()        
+
             if ratings:
-                
-                ratings = [r.rating for r in ratings]
-                rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
-                anime.rating = round(rating, 2)
-            
+                    ratings = [r.rating for r in ratings]
+                    rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                    anime['rating'] = round(rating, 2) 
             else:
-                anime.rating = None
-
-            anime_with_rating.append(anime)
-        
-        paged_animes= paginate(anime_with_rating, 24)
-
-        return jsonify(paged_animes)
-
-
+                    anime['rating'] = None
+        return jsonify(animes)
     except GenreNotFoundError:
         return {'message': 'The genre its not found'}, HTTPStatus.NOT_FOUND
-
 
 
 def get_latest_animes():
