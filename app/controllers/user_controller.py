@@ -3,16 +3,19 @@ from http import HTTPStatus
 
 import psycopg2
 import sqlalchemy
+from sqlalchemy.exc import InvalidRequestError
 from app.exc import PageNotFoundError, user_error as UserErrors
 from app.models.anime_model import AnimeModel
 from app.models.user_model import UserModel
 from app.services import user_service as Users
-from app.services.helpers import decode_json, encode_json, encode_list_json, paginate
+from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, send_temp_token
 from app.services.imgur_service import upload_image
 from app.services.helpers import paginate
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity,jwt_required
+from secrets import token_urlsafe
 
+import pdb
 
 def create():
     try:
@@ -115,6 +118,47 @@ def update_password():
     except KeyError as e:
         return {'message': f'{str(e.args[0])} is missing'}
 
+
+def generate_mail_temp_token():
+    data = decode_json(request.json)
+    user = UserModel.query.filter_by(email=data['email']).first()
+
+    try: 
+        Users.verify_valid_request_for_token(user, data)
+
+        temp_token = token_urlsafe(32)
+        current_app.cache.set(user.email, temp_token, timeout=5*60)
+
+        send_temp_token(user, temp_token)
+
+        return {'message': 'Recovery password sent to email.'}, HTTPStatus.OK
+    except InvalidRequestError:
+        return {'message': 'Wrong information sent'}, HTTPStatus.BAD_REQUEST
+
+
+def password_recovery_from_temp_token(id):
+    data = decode_json(request.json)
+    user = UserModel.query.get(id)
+
+    try:
+        Users.verify_valid_request_for_token(user, data)    
+        if 'new_password' not in data.keys():
+            return {'message': 'Missing key "new_password" required.'}, HTTPStatus.BAD_REQUEST
+
+        cached_token = current_app.cache.get(user.email)
+
+        if data['temp_token'] != cached_token:
+            return {'message': 'Token expired.'}, HTTPStatus.BAD_REQUEST
+
+        user.password = data['new_password']
+        current_app.db.session.add(user)
+        current_app.db.session.commit()
+
+        current_app.cache.delete(user.email)
+
+        return '', HTTPStatus.NO_CONTENT
+    except InvalidRequestError:
+        return {'message': 'Wrong information sent'}, HTTPStatus.BAD_REQUEST
 
 @jwt_required()
 def delete_self():
