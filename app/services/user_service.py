@@ -34,11 +34,11 @@ def verify_admin():
 
 
 def verify_valid_request_for_token(user, data):
-    if 'username' not in data.keys() or 'email' not in data.keys():
+    if 'email' not in data.keys():
         raise InvalidUserRequestError()
 
     if not user:
         raise InvalidUserRequestError()
 
-    if user.username != data['username'] or user.email != data['email']:
+    if user.email != data['email']:
         raise InvalidUserRequestError()
