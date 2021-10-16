@@ -1,4 +1,4 @@
-from app.exc.user_error import InvalidPermissionError, InvalidUsernameError
+from app.exc.user_error import InvalidPermissionError, InvalidUserRequestError, InvalidUsernameError
 from app.models.user_model import UserModel
 from datetime import datetime
 from flask_jwt_extended import get_jwt_identity
@@ -31,3 +31,14 @@ def verify_admin():
 
     if user_permission != 'admin':
         raise InvalidPermissionError
+
+
+def verify_valid_request_for_token(user, data):
+    if 'email' not in data.keys():
+        raise InvalidUserRequestError()
+
+    if not user:
+        raise InvalidUserRequestError()
+
+    if user.email != data['email']:
+        raise InvalidUserRequestError()
