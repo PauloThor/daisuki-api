@@ -46,6 +46,7 @@ def get_all_episodes():
         episodes = paginate(Episode.list_episodes())
         for episode in episodes['data']:
             anime = AnimeModel.query.get(episode['animeId'])
+            episode.pop('animeId')
             episode['animeName'] = anime.name
         return jsonify(episodes), HTTPStatus.OK
     except PageNotFoundError as e:
