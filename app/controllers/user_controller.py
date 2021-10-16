@@ -3,8 +3,8 @@ from http import HTTPStatus
 
 import psycopg2
 import sqlalchemy
-from sqlalchemy.exc import InvalidRequestError
 from app.exc import PageNotFoundError, user_error as UserErrors
+from app.exc.user_error import InvalidUserRequestError
 from app.models.anime_model import AnimeModel
 from app.models.user_model import UserModel
 from app.services import user_service as Users
@@ -132,7 +132,7 @@ def generate_mail_temp_token():
         send_temp_token(user, temp_token)
 
         return {'message': 'Recovery password sent to email.'}, HTTPStatus.OK
-    except InvalidRequestError:
+    except InvalidUserRequestError:
         return {'message': 'Wrong information sent'}, HTTPStatus.BAD_REQUEST
 
 
@@ -157,7 +157,7 @@ def password_recovery_from_temp_token(id):
         current_app.cache.delete(user.email)
 
         return '', HTTPStatus.NO_CONTENT
-    except InvalidRequestError:
+    except InvalidUserRequestError:
         return {'message': 'Wrong information sent'}, HTTPStatus.BAD_REQUEST
 
 @jwt_required()

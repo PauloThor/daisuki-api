@@ -14,5 +14,5 @@ class InvalidUsernameError(Exception):
 class InvalidFavoriteError(Exception):
     ...
 
-class InvalidRequestError(Exception):
+class InvalidUserRequestError(Exception):
     ...
