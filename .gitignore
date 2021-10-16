@@ -147,7 +147,7 @@ dmypy.json
 cython_debug/
 
 #Cache
-cache/
+cache
 
 # End of https://www.toptal.com/developers/gitignore/api/flask
 

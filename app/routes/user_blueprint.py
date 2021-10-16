@@ -20,3 +20,6 @@ bp.get('/favorites')(Controller.get_favorites)
 bp.delete('/favorites/<int:anime_id>')(Controller.delete_favorite)
 
 bp.get('/watched-episodes')(Controller.get_watched)
+
+bp.post('/temp-token')(Controller.generate_mail_temp_token)
+bp.post('<int:id>/recovery-password')(Controller.password_recovery_from_temp_token)

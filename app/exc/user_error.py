@@ -13,3 +13,6 @@ class InvalidUsernameError(Exception):
 
 class InvalidFavoriteError(Exception):
     ...
+
+class InvalidUserRequestError(Exception):
+    ...
