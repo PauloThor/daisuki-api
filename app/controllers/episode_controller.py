@@ -47,7 +47,7 @@ def get_all_episodes():
         for episode in episodes['data']:
             anime = AnimeModel.query.get(episode['animeId'])
             episode.pop('animeId')
-            episode['animeName'] = anime.name
+            episode['anime'] = {'id': anime.id, 'name': anime.name, 'isMovie': anime.is_movie}
         return jsonify(episodes), HTTPStatus.OK
     except PageNotFoundError as e:
         return e.message, HTTPStatus.UNPROCESSABLE_ENTITY
