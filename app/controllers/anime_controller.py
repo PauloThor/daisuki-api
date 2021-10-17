@@ -272,8 +272,10 @@ def get_anime_by_name(anime_name: str):
        anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
        ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
        synopsis = anime.synopsis
+       genres = anime.genres
        anime = asdict(anime)
        anime['synopsis'] = synopsis
+       anime['genres'] = [genre.name for genre in genres]
  
        if ratings:
            ratings = [r.rating for r in ratings]
