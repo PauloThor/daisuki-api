@@ -255,10 +255,8 @@ def get_most_popular():
     return jsonify(data), HTTPStatus.OK
 
 
-def search():
-    try:
-        anime_name = request.json['anime']
-        
+def search(anime_name: str):
+    try:        
         query = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%')).all()
         output = paginate(query)
 
