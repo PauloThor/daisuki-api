@@ -42,16 +42,18 @@ def create():
          return {'message': 'Username already exists'}, HTTPStatus.BAD_REQUEST
 
 
-
 def get_user(id: int):      
     found_user = UserModel.query.get(id)
     if not found_user:
         return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
-    return jsonify({
-        'username': found_user.username,
-        'avatarUrl': found_user.avatar_url
-    })
+    return encode_json(found_user)
 
+
+@jwt_required()
+def get_me():
+    user = get_jwt_identity()      
+    found_user = UserModel.query.get(user['id'])
+    return encode_json(found_user)
 
 
 def login():
