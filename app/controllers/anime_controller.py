@@ -260,8 +260,28 @@ def search():
         anime_name = request.json['anime']
         
         query = AnimeModel.query.filter(AnimeModel.name.ilike(f'%{anime_name}%')).all()
+        output = paginate(query)
 
-        return encode_list_json(query), HTTPStatus.OK    
+        data = output['data']
+
+        new_data = []
+
+        for item in data:
+            rating = ''
+            ratings = AnimeRatingModel.query.filter_by(anime_id=item['id']).all()
+
+            if ratings:
+                ratings = [r.rating for r in ratings]
+                rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+                item['rating'] = round(rating, 2)
+            else:                
+                item['rating'] = None
+
+            new_data.append(item)
+        
+        output['data'] = new_data
+
+        return jsonify(output), HTTPStatus.OK
     except (TypeError, KeyError):
         return {'message': 'There should be a prop named anime with a string value'}
 
