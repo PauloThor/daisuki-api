@@ -8,15 +8,13 @@ import humps
 import psycopg2
 import sqlalchemy
 import werkzeug
-from unidecode import unidecode
-from app.exc import InvalidImageError, PageNotFoundError, DataNotFound
+from app.exc import DataNotFound, InvalidImageError, PageNotFoundError
 from app.exc import user_error as UserErrors
-from app.exc.anime_errors import GenreNotFoundError, InvalidRating
+from app.exc.anime_errors import InvalidRating
 from app.exc.user_error import InvalidPermissionError
 from app.models.anime_model import AnimeModel
 from app.models.anime_rating_model import AnimeRatingModel
 from app.models.episode_model import EpisodeModel
-from app.models.genre_anime_model import GenreAnimeModel
 from app.models.genre_model import GenreModel
 from app.models.user_model import UserModel
 from app.services import anime_service as Animes
@@ -26,8 +24,9 @@ from app.services.helpers import (decode_json, encode_json, encode_list_json,
 from app.services.imgur_service import upload_image
 from flask import current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from sqlalchemy import and_, desc, func
+from sqlalchemy import desc, func
 from sqlalchemy.sql.functions import func
+from unidecode import unidecode
 
 
 @jwt_required()
@@ -139,7 +138,8 @@ def get_animes():
 
 
 def get_genres():
-    return jsonify(GenreModel.query.all()), HTTPStatus.OK
+    genres = GenreModel.query.order_by(GenreModel.name).all()
+    return jsonify(genres), HTTPStatus.OK
 
 
 def get_by_genre(genre_name):
