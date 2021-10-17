@@ -297,7 +297,7 @@ def get_anime_episodes(anime_name: str):
         
         if current_user:
             user = UserModel.query.filter_by(id=current_user['id']).first()
-            watched_episodes = [episode.id for episode in user.watched_episodes]
+            watched_episodes = [episode.id for episode in user.watched]
             for episode in episodes['data']:
                 if episode['id'] in watched_episodes:
                     episode['hasWatched'] = True

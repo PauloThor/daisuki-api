@@ -30,7 +30,6 @@ class UserModel(db.Model):
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
     favorites = relationship('AnimeModel', backref="favorites", secondary='users_favorites_animes', cascade='all, delete')
-    watched_episodes = relationship('EpisodeModel', backref='episodes', secondary='watched_episodes')
   
     @property
     def password(self):
