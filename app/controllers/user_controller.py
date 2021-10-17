@@ -311,10 +311,22 @@ def get_watched():
     found_user = get_jwt_identity()
     try:
         user = UserModel.query.get(found_user['id'])
-
         output = paginate(user.watched)
+        data = output['data']
+
+        watched = []
+
+        for item in data:
+            anime = AnimeModel.query.get(item['animeId'])
+            watched.append({
+                'anime': anime.name,
+                'episode': item['episodeNumber']
+            })
+        
+        output['data'] = watched
 
         return jsonify(output)
+
     except PageNotFoundError as e:
         return e.message, HTTPStatus.BAD_REQUEST
 
