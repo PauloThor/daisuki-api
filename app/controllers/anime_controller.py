@@ -144,7 +144,7 @@ def get_genres():
 
 def get_by_genre(genre_name):
     try:
-        genre_name = genre_name.title()
+        genre_name = genre_name.capitalize().replace('-', ' ')
 
         genres = GenreModel.query.all()
 

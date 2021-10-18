@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 from app.configs.database import db
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
@@ -24,4 +24,4 @@ class CommentModel(db.Model):
     created_at = Column(DateTime(timezone=True), nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
-    user = relationship('UserModel')
+    user = relationship('UserModel', backref=backref('comments', cascade='all, delete-orphan') )
