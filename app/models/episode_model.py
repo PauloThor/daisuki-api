@@ -29,4 +29,4 @@ class EpisodeModel(db.Model):
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
     viewers = relationship('UserModel', backref='watched', secondary='watched_episodes')
-
+    comments = relationship('CommentModel', cascade='all, delete-orphan')
