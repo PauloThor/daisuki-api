@@ -28,7 +28,7 @@ def create_anime(files: ImmutableMultiDict, form: ImmutableMultiDict) -> AnimeMo
 
 def set_anime_genres(genres: list, anime: AnimeModel, session) -> AnimeModel:
     for genre in genres:
-        genre = genre.strip().title()
+        genre = genre.strip().capitalize()
         db_genre = GenreModel.query.filter(GenreModel.name.ilike(genre)).first()
         if not db_genre:
             db_genre = GenreModel(name=genre)
