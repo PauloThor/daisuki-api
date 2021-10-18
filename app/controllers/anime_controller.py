@@ -7,6 +7,7 @@ from http import HTTPStatus
 import humps
 import psycopg2
 import sqlalchemy
+from sqlalchemy.sql.expression import null
 import werkzeug
 from app.exc import DataNotFound, InvalidImageError, PageNotFoundError
 from app.exc import user_error as UserErrors
@@ -356,3 +357,19 @@ def get_name_animes_incompleted():
     animes = AnimeModel.query.filter(AnimeModel.is_completed==False).order_by(AnimeModel.name).all()
     output = [anime.name for anime in animes]
     return jsonify(output)
+
+
+
+def get_rating(anime_name: str):
+   try:
+       anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
+       anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
+       rating = None
+       ratings = AnimeRatingModel.query.filter_by(anime_id=anime.id).all()
+       if ratings:
+           ratings = [r.rating for r in ratings]
+           rating = reduce((lambda a, b: a + b), ratings) / len(ratings)
+ 
+       return {"rating": rating}, HTTPStatus.OK
+   except werkzeug.exceptions.NotFound:
+       return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
