@@ -293,7 +293,7 @@ def get_anime_by_name(anime_name: str):
        genres = anime.genres
        anime = asdict(anime)
        anime['synopsis'] = synopsis
-       anime['genres'] = [genre.name for genre in genres]
+       anime['genres'] = [{"name": genre.name} for genre in genres]
  
        if ratings:
            ratings = [r.rating for r in ratings]
