@@ -246,6 +246,8 @@ def post_favorite(anime_id: int):
         anime = AnimeModel.query.get(anime_id)
         user = UserModel.query.get(found_user['id'])
 
+        if not anime:
+            return {'message': 'Anime not found'}, HTTPStatus.NOT_FOUND
         if anime in user.favorites:
             raise UserErrors.InvalidFavoriteError
 
