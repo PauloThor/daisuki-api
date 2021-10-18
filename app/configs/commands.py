@@ -77,15 +77,16 @@ def cli_episodes(app: Flask):
 
 def cli_admin(app: Flask):
     cli = AppGroup('cli_admin')
-    session = current_app.db.session
 
     @cli.command('create')
     @argument('email')
     @argument('username')
     @argument('password')
-    @option('avatar_url')
     def cli_create_admin(email: str, username: str, password: str):
+        session = current_app.db.session
+
         admin_check = UserModel.query.filter_by(email=email).first()
+
         echo(f'email: {email}, username: {username}')
         if admin_check:
             echo('')
@@ -99,7 +100,6 @@ def cli_admin(app: Flask):
             echo(f'Error: user with the username {username} already registered.')
             echo(f'Use the "flask cli_admin upgrade --username={username}" command')
             return None
-
 
         new_admin = UserModel(email=email, username=username)
         new_admin.permission = 'admin'
@@ -115,6 +115,14 @@ def cli_admin(app: Flask):
     @option('--email', default=None)
     @option('--username', default=None)
     def cli_admin_upgrade(email: str, username: str):
+        session = current_app.db.session
+
+        if email and username:
+            user_to_admin = UserModel.query.filter_by(email=email).first()
+            if not user_to_admin.username == username:
+                echo(f"Error: username and email doesn't belong to the same user.")
+                return None
+
         if email:
             user_to_admin = UserModel.query.filter_by(email=email).first()
             
@@ -123,11 +131,12 @@ def cli_admin(app: Flask):
                 return None
 
             setattr(user_to_admin, 'permission', 'admin')
+            setattr(user_to_admin, 'updated_at', datetime.utcnow())
             session.add(user_to_admin)
             session.commit()
             echo('User updated successfully.')
 
-        if username:
+        elif username:
             user_to_admin = UserModel.query.filter_by(username=username).first()
             
             if not user_to_admin:
@@ -135,22 +144,27 @@ def cli_admin(app: Flask):
                 return None
 
             setattr(user_to_admin, 'permission', 'admin')
+            setattr(user_to_admin, 'updated_at', datetime.utcnow())
             session.add(user_to_admin)
             session.commit()
             echo('User updated successfully.')
+        
 
     @cli.command('downgrade')
     @argument('email')
-    @option('permission')
-    def cli_admin_downgrade(email: str, permission: str = 'user'):
-        user_to_admin = UserModel.query.filter_by(email=email).first()
+    @option('--permission', default='user')
+    def cli_admin_downgrade(email: str, permission: str):
+        session = current_app.db.session
+
+        user = UserModel.query.filter_by(email=email).first()
             
-        if not user_to_admin:
+        if not user:
             echo(f'Error: the email {email} is not registered.')
             return None
 
-        setattr(user_to_admin, 'permission', permission)
-        session.add(user_to_admin)
+        setattr(user, 'permission', permission)
+        setattr(user, 'updated_at', datetime.utcnow())
+        session.add(user)
         session.commit()
         echo('User demoted successfully.')
 
