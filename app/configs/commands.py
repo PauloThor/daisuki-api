@@ -1,10 +1,14 @@
 from flask import Flask, current_app
 from flask.cli import AppGroup
+from click import argument, option, echo
 from app.models.genre_model import GenreModel
 from app.models.anime_model import AnimeModel
 from app.models.genre_anime_model import GenreAnimeModel
 from app.models.episode_model import EpisodeModel
 from json import load
+from datetime import datetime
+
+from app.models.user_model import UserModel
 
 
 def read_json(filename: str):
@@ -71,7 +75,103 @@ def cli_episodes(app: Flask):
     app.cli.add_command(cli)
 
 
+def cli_admin(app: Flask):
+    cli = AppGroup('cli_admin')
+
+    @cli.command('create')
+    @argument('email')
+    @argument('username')
+    @argument('password')
+    def cli_create_admin(email: str, username: str, password: str):
+        session = current_app.db.session
+
+        admin_check = UserModel.query.filter_by(email=email).first()
+
+        echo(f'email: {email}, username: {username}')
+        if admin_check:
+            echo('')
+            echo(f'Error: user with the email {email} already registered.')
+            echo(f'Use the "flask cli_admin upgrade --email={email}" command')
+            return None
+        
+        admin_check = UserModel.query.filter_by(username=username).first()
+        if admin_check:
+            echo('')
+            echo(f'Error: user with the username {username} already registered.')
+            echo(f'Use the "flask cli_admin upgrade --username={username}" command')
+            return None
+
+        new_admin = UserModel(email=email, username=username)
+        new_admin.permission = 'admin'
+        new_admin.created_at = datetime.utcnow()
+        new_admin.updated_at = datetime.utcnow()
+        new_admin.password = password
+
+        session.add(new_admin)
+        session.commit()
+        echo('Admin successfully created.')
+
+    @cli.command('upgrade')
+    @option('--email', default=None)
+    @option('--username', default=None)
+    def cli_admin_upgrade(email: str, username: str):
+        session = current_app.db.session
+
+        if email and username:
+            user_to_admin = UserModel.query.filter_by(email=email).first()
+            if not user_to_admin.username == username:
+                echo(f"Error: username and email doesn't belong to the same user.")
+                return None
+
+        if email:
+            user_to_admin = UserModel.query.filter_by(email=email).first()
+            
+            if not user_to_admin:
+                echo(f'Error: the email {email} is not registered.')
+                return None
+
+            setattr(user_to_admin, 'permission', 'admin')
+            setattr(user_to_admin, 'updated_at', datetime.utcnow())
+            session.add(user_to_admin)
+            session.commit()
+            echo('User updated successfully.')
+
+        elif username:
+            user_to_admin = UserModel.query.filter_by(username=username).first()
+            
+            if not user_to_admin:
+                echo(f'Error: the username {username} is not registered.')
+                return None
+
+            setattr(user_to_admin, 'permission', 'admin')
+            setattr(user_to_admin, 'updated_at', datetime.utcnow())
+            session.add(user_to_admin)
+            session.commit()
+            echo('User updated successfully.')
+        
+
+    @cli.command('downgrade')
+    @argument('email')
+    @option('--permission', default='user')
+    def cli_admin_downgrade(email: str, permission: str):
+        session = current_app.db.session
+
+        user = UserModel.query.filter_by(email=email).first()
+            
+        if not user:
+            echo(f'Error: the email {email} is not registered.')
+            return None
+
+        setattr(user, 'permission', permission)
+        setattr(user, 'updated_at', datetime.utcnow())
+        session.add(user)
+        session.commit()
+        echo('User demoted successfully.')
+
+    app.cli.add_command(cli)
+
 def init_app(app: Flask):
     cli_genres(app)
     cli_animes(app)
     cli_episodes(app)
+    cli_admin(app)
