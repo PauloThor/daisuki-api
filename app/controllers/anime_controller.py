@@ -313,7 +313,8 @@ def get_anime_episodes(anime_name: str):
     try:
         anime_name = re.sub('[^a-zA-Z0-9 \n\.]', '', anime_name)
         anime = AnimeModel.query.filter(func.lower(func.regexp_replace(AnimeModel.name, '[^a-zA-Z0-9\n\.]', '','g'))==func.lower(anime_name)).first_or_404()
-        episodes = paginate(anime.episodes, 24)
+        all_episodes = sorted(anime.episodes, key=lambda x: x.episode_number)
+        episodes = paginate(all_episodes, 24)
         current_user = get_jwt_identity()
         
         if current_user:

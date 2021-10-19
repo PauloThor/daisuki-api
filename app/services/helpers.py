@@ -114,7 +114,7 @@ def send_temp_token(user, token):
             Uma redefinição de senha foi solicitada para sua conta. Se foi você,
             siga o link abaixo:
             </p>
-            <a href="https://www.teste.vercel.app/users/%d/%s" target="__blank"
+            <a href="https://animedaisuki.vercel.app/password-recovery/%d/%s" target="__blank"
             ><button>Clique aqui</button></a
             >
 
