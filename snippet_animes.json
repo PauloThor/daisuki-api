@@ -7,7 +7,8 @@
     "is_movie": true,
     "is_dubbed": true,
     "is_completed": true,
-    "created_at": "2021-10-01 08:10:14"
+    "created_at": "2021-10-01 08:10:14",
+    "updated_at": "2021-10-01 08:10:14"
   },
   {
     "name": "Tenki no Ko (Dublado)",
@@ -17,7 +18,8 @@
     "is_movie": true,
     "is_dubbed": true,
     "is_completed": true,
-    "created_at": "2021-10-01 08:14:51"
+    "created_at": "2021-10-01 08:14:51",
+    "updated_at": "2021-10-01 08:14:51"
   },
   {
     "name": "Ore dake Haireru Kakushi Dungeon (Dublado)",
@@ -27,7 +29,8 @@
     "is_movie": false,
     "is_dubbed": true,
     "is_completed": false,
-    "created_at": "2021-10-01 08:31:48"
+    "created_at": "2021-10-01 08:31:48",
+    "updated_at": "2021-10-01 08:31:48"
   },
   {
     "name": "Kumo desu ga, Nani ka (Dublado)",
@@ -37,7 +40,8 @@
     "is_movie": false,
     "is_dubbed": true,
     "is_completed": false,
-    "created_at": "2021-10-01 09:05:31"
+    "created_at": "2021-10-01 09:05:31",
+    "updated_at": "2021-10-01 09:05:31"
   },
   {
     "name": "Jujutsu Kaisen (Dublado)",
@@ -47,7 +51,8 @@
     "is_movie": false,
     "is_dubbed": true,
     "is_completed": false,
-    "created_at": "2021-10-01 09:44:04"
+    "created_at": "2021-10-01 09:44:04",
+    "updated_at": "2021-10-01 09:44:04"
   },
   {
     "name": "Jujutsu Kaisen",
@@ -57,7 +62,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-01 13:21:45"
+    "created_at": "2021-10-01 13:21:45",
+    "updated_at": "2021-10-01 13:21:45"
   },
   {
     "name": "Slime Taoshite 300-nen, Shiranai Uchi ni Level Max ni Nattemashita",
@@ -67,7 +73,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-01 15:34:09"
+    "created_at": "2021-10-01 15:34:09",
+    "updated_at": "2021-10-01 15:34:09"
   },
   {
     "name": "Tokyo Revengers",
@@ -77,7 +84,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-01 16:31:26"
+    "created_at": "2021-10-01 16:31:26",
+    "updated_at": "2021-10-01 16:31:26"
   },
   {
     "name": "Fumetsu no Anata e",
@@ -87,7 +95,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-01 17:03:18"
+    "created_at": "2021-10-01 17:03:18",
+    "updated_at": "2021-10-01 17:03:18"
   },
   {
     "name": "The God of High School",
@@ -97,7 +106,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-01 19:28:12"
+    "created_at": "2021-10-01 19:28:12",
+    "updated_at": "2021-10-01 19:28:12"
   },
   {
     "name": "Kimi no Na wa",
@@ -107,7 +117,8 @@
     "is_movie": true,
     "is_dubbed": false,
     "is_completed": true,
-    "created_at": "2021-10-02 09:16:53"
+    "created_at": "2021-10-02 09:16:53",
+    "updated_at": "2021-10-02 09:16:53"
   },
   {
     "name": "Kimetsu no Yaiba Movie: Mugen Ressha-hen",
@@ -117,7 +128,8 @@
     "is_movie": true,
     "is_dubbed": false,
     "is_completed": true,
-    "created_at": "2021-10-02 09:18:02"
+    "created_at": "2021-10-02 09:18:02",
+    "updated_at": "2021-10-02 09:18:02"
   },
   {
     "name": "100-man no Inochi no Ue ni Ore wa Tatteiru",
@@ -127,7 +139,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-02 09:37:50"
+    "created_at": "2021-10-02 09:37:50",
+    "updated_at": "2021-10-02 09:37:50"
   },
   {
     "name": "Kami no Tou",
@@ -137,7 +150,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": true,
-    "created_at": "2021-10-02 14:21:48"
+    "created_at": "2021-10-02 14:21:48",
+    "updated_at": "2021-10-02 14:21:48"
   },
   {
     "name": "Koe no Katachi",
@@ -147,7 +161,8 @@
     "is_movie": true,
     "is_dubbed": false,
     "is_completed": true,
-    "created_at": "2021-10-02 14:25:29"
+    "created_at": "2021-10-02 14:25:29",
+    "updated_at": "2021-10-02 14:25:29"
   },
   {
     "name": "Haikyuu!!: To the Top",
@@ -157,7 +172,8 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-03 10:05:16"
+    "created_at": "2021-10-03 10:05:16",
+    "updated_at": "2021-10-03 10:05:16"
   },
   {
     "name": "Kobayashi-san Chi no Maid Dragon S",
@@ -167,6 +183,7 @@
     "is_movie": false,
     "is_dubbed": false,
     "is_completed": false,
-    "created_at": "2021-10-03 14:56:17"
+    "created_at": "2021-10-03 14:56:17",
+    "updated_at": "2021-10-03 14:56:17"
   }
 ]
