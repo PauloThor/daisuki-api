@@ -7,6 +7,7 @@ from app.exc import PageNotFoundError, user_error as UserErrors
 from app.exc.user_error import InvalidUserRequestError
 from app.models.anime_model import AnimeModel
 from app.models.user_model import UserModel
+from app.models.watched_episode_model import WatchedEpisodeModel
 from app.services import user_service as Users
 from app.services.helpers import decode_json, encode_json, encode_list_json, paginate, send_temp_token
 from app.services.imgur_service import upload_image
@@ -312,18 +313,22 @@ def update_avatar():
 def get_watched():
     found_user = get_jwt_identity()
     try:
-        user = UserModel.query.get(found_user['id'])
-        output = paginate(user.watched)
+        user = UserModel.query.get(found_user['id'])        
+        output = paginate(user.watched, 50)
         data = output['data']
 
         watched = []
 
         for item in data:
             anime = AnimeModel.query.get(item['animeId'])
+            watched_episode = WatchedEpisodeModel.query.filter(WatchedEpisodeModel.user_id == user.id, WatchedEpisodeModel.episode_id == item['id']).first()
             watched.append({
                 'anime': anime.name,
-                'episode': item['episodeNumber']
+                'episode': item['episodeNumber'],
+                'watchedAt': watched_episode.watched_at
             })
+        
+        watched = sorted(watched, key=lambda x: x['watchedAt'], reverse=True )
         
         output['data'] = watched
 
