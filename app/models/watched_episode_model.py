@@ -4,6 +4,8 @@ from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from datetime import datetime
 
+from app.models.episode_model import EpisodeModel
+
 
 @dataclass
 class WatchedEpisodeModel(db.Model):
